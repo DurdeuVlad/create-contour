@@ -51,7 +51,7 @@ Status column values: PASS / PARTIAL / NOT RUN / BLOCKED / NOT IMPLEMENTED (hone
 | Two compile profiles; primary vs secondary runtime deps explicit | 01 | L1 | PASS (both `gradlew build` + 4 logic tests each) |
 | RC2 pack profile record: Compatibility.md settled snapshot + hash-verified isolated client/server copies prepared | 01 | L0 | NOT RUN |
 | Two planned target profiles compile: primary pack (6.0.10/NF21.1.248/bundled+67/FW1.0.6/Ponder1.0.82/JEI19.57 opt) and legacy (6.0.8-168/NF21.1.213; +67 deviation, Ponder 1.0.66 explicit) | 01 | L1 | DONE 2026-11-03 (both `gradlew build`; logs in docs/evidence/logs/) |
-| Dedicated server boots with no client-class loads | 01 | L4m (server only) | PASS (GameTest server + runserver-shapes.log) |
+| Dedicated server boots with no client-class loads | 01 | L4m (server only) | PASS (GameTest server + runserver-shapes.log; shipped `create_contour-0.1.0-alpha.jar` + Create 6.0.10-280 on clean NeoForge 21.1.248 install reached `Done (5.046s)` with zero mod errors - `.cache/server-prod/server.log`) |
 | License/credits correct; provenance register; no competitor code/assets | 02 | L0 | PASS (licenses/Create-MIT.txt shipped, Provenance.md) |
 | Original neutral texture/model renders when no material | 02, 03 | L3 | PASS (neutral-own-sprites smoke + visual) |
 | Versioned BE NBT; migration 0->1; malformed/partial/future-version safety | 03 | L2 | PASS (bePersistence); L3 PARTIAL |
