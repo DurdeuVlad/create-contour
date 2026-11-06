@@ -1,0 +1,22 @@
+{
+ "variants": {
+  "axis=x,waterlogged=false": {
+   "model": "create_contour:block/contour_post"
+  },
+  "axis=x,waterlogged=true": {
+   "model": "create_contour:block/contour_post"
+  },
+  "axis=y,waterlogged=false": {
+   "model": "create_contour:block/contour_post"
+  },
+  "axis=y,waterlogged=true": {
+   "model": "create_contour:block/contour_post"
+  },
+  "axis=z,waterlogged=false": {
+   "model": "create_contour:block/contour_post"
+  },
+  "axis=z,waterlogged=true": {
+   "model": "create_contour:block/contour_post"
+  }
+ }
+}

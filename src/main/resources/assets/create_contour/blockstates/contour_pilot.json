@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "facing=east,waterlogged=true": {
+      "model": "create_contour:block/contour_pilot"
+    },
+    "facing=east,waterlogged=false": {
+      "model": "create_contour:block/contour_pilot"
+    },
+    "facing=north,waterlogged=true": {
+      "model": "create_contour:block/contour_pilot"
+    },
+    "facing=north,waterlogged=false": {
+      "model": "create_contour:block/contour_pilot"
+    },
+    "facing=south,waterlogged=true": {
+      "model": "create_contour:block/contour_pilot"
+    },
+    "facing=south,waterlogged=false": {
+      "model": "create_contour:block/contour_pilot"
+    },
+    "facing=west,waterlogged=true": {
+      "model": "create_contour:block/contour_pilot"
+    },
+    "facing=west,waterlogged=false": {
+      "model": "create_contour:block/contour_pilot"
+    }
+  }
+}

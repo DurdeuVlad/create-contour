@@ -1,0 +1,10 @@
+{
+ "variants": {
+  "waterlogged=false": {
+   "model": "create_contour:block/contour_ghost"
+  },
+  "waterlogged=true": {
+   "model": "create_contour:block/contour_ghost"
+  }
+ }
+}

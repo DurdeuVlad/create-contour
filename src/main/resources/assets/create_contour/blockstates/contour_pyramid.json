@@ -1,0 +1,16 @@
+{
+ "variants": {
+  "half=bottom,waterlogged=false": {
+   "model": "create_contour:block/contour_pyramid"
+  },
+  "half=bottom,waterlogged=true": {
+   "model": "create_contour:block/contour_pyramid"
+  },
+  "half=top,waterlogged=false": {
+   "model": "create_contour:block/contour_pyramid"
+  },
+  "half=top,waterlogged=true": {
+   "model": "create_contour:block/contour_pyramid"
+  }
+ }
+}

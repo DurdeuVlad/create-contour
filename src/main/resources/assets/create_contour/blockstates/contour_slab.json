@@ -1,0 +1,22 @@
+{
+ "variants": {
+  "type=bottom,waterlogged=false": {
+   "model": "create_contour:block/contour_slab_bottom"
+  },
+  "type=bottom,waterlogged=true": {
+   "model": "create_contour:block/contour_slab_bottom"
+  },
+  "type=top,waterlogged=false": {
+   "model": "create_contour:block/contour_slab_top"
+  },
+  "type=top,waterlogged=true": {
+   "model": "create_contour:block/contour_slab_top"
+  },
+  "type=double,waterlogged=false": {
+   "model": "create_contour:block/contour_double"
+  },
+  "type=double,waterlogged=true": {
+   "model": "create_contour:block/contour_double"
+  }
+ }
+}

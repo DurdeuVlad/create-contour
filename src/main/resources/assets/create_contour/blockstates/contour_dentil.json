@@ -1,0 +1,52 @@
+{
+  "variants": {
+    "facing=east,half=bottom,waterlogged=true": {
+      "model": "create_contour:block/contour_dentil"
+    },
+    "facing=east,half=bottom,waterlogged=false": {
+      "model": "create_contour:block/contour_dentil"
+    },
+    "facing=east,half=top,waterlogged=true": {
+      "model": "create_contour:block/contour_dentil"
+    },
+    "facing=east,half=top,waterlogged=false": {
+      "model": "create_contour:block/contour_dentil"
+    },
+    "facing=north,half=bottom,waterlogged=true": {
+      "model": "create_contour:block/contour_dentil"
+    },
+    "facing=north,half=bottom,waterlogged=false": {
+      "model": "create_contour:block/contour_dentil"
+    },
+    "facing=north,half=top,waterlogged=true": {
+      "model": "create_contour:block/contour_dentil"
+    },
+    "facing=north,half=top,waterlogged=false": {
+      "model": "create_contour:block/contour_dentil"
+    },
+    "facing=south,half=bottom,waterlogged=true": {
+      "model": "create_contour:block/contour_dentil"
+    },
+    "facing=south,half=bottom,waterlogged=false": {
+      "model": "create_contour:block/contour_dentil"
+    },
+    "facing=south,half=top,waterlogged=true": {
+      "model": "create_contour:block/contour_dentil"
+    },
+    "facing=south,half=top,waterlogged=false": {
+      "model": "create_contour:block/contour_dentil"
+    },
+    "facing=west,half=bottom,waterlogged=true": {
+      "model": "create_contour:block/contour_dentil"
+    },
+    "facing=west,half=bottom,waterlogged=false": {
+      "model": "create_contour:block/contour_dentil"
+    },
+    "facing=west,half=top,waterlogged=true": {
+      "model": "create_contour:block/contour_dentil"
+    },
+    "facing=west,half=top,waterlogged=false": {
+      "model": "create_contour:block/contour_dentil"
+    }
+  }
+}

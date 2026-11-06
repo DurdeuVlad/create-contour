@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "axis=x,waterlogged=true": {
+      "model": "create_contour:block/contour_torus"
+    },
+    "axis=x,waterlogged=false": {
+      "model": "create_contour:block/contour_torus"
+    },
+    "axis=y,waterlogged=true": {
+      "model": "create_contour:block/contour_torus"
+    },
+    "axis=y,waterlogged=false": {
+      "model": "create_contour:block/contour_torus"
+    },
+    "axis=z,waterlogged=true": {
+      "model": "create_contour:block/contour_torus"
+    },
+    "axis=z,waterlogged=false": {
+      "model": "create_contour:block/contour_torus"
+    }
+  }
+}

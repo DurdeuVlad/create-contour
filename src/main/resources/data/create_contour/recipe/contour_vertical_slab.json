@@ -1,0 +1,21 @@
+{
+ "type": "minecraft:crafting_shaped",
+ "category": "building",
+ "pattern": [
+  "N ",
+  "N ",
+  "AN"
+ ],
+ "key": {
+  "N": {
+   "item": "minecraft:iron_nugget"
+  },
+  "A": {
+   "item": "create:andesite_alloy"
+  }
+ },
+ "result": {
+  "id": "create_contour:contour_vertical_slab",
+  "count": 3
+ }
+}

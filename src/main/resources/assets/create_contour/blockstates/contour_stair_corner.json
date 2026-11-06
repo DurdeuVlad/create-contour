@@ -1,0 +1,100 @@
+{
+  "variants": {
+    "corner=ne,half=top,inner=true,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=ne,half=top,inner=true,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=ne,half=top,inner=false,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=ne,half=top,inner=false,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=ne,half=bottom,inner=true,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=ne,half=bottom,inner=true,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=ne,half=bottom,inner=false,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=ne,half=bottom,inner=false,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=nw,half=top,inner=true,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=nw,half=top,inner=true,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=nw,half=top,inner=false,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=nw,half=top,inner=false,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=nw,half=bottom,inner=true,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=nw,half=bottom,inner=true,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=nw,half=bottom,inner=false,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=nw,half=bottom,inner=false,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=se,half=top,inner=true,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=se,half=top,inner=true,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=se,half=top,inner=false,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=se,half=top,inner=false,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=se,half=bottom,inner=true,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=se,half=bottom,inner=true,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=se,half=bottom,inner=false,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=se,half=bottom,inner=false,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=sw,half=top,inner=true,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=sw,half=top,inner=true,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=sw,half=top,inner=false,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=sw,half=top,inner=false,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=sw,half=bottom,inner=true,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=sw,half=bottom,inner=true,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=sw,half=bottom,inner=false,waterlogged=true": {
+      "model": "create_contour:block/contour_stair_corner"
+    },
+    "corner=sw,half=bottom,inner=false,waterlogged=false": {
+      "model": "create_contour:block/contour_stair_corner"
+    }
+  }
+}

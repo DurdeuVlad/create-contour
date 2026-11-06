@@ -1,0 +1,22 @@
+{
+  "type": "create:mechanical_crafting",
+  "category": "building",
+  "pattern": [
+    "NAN",
+    "A A",
+    "NAA"
+  ],
+  "key": {
+    "N": {
+      "item": "minecraft:iron_nugget"
+    },
+    "A": {
+      "item": "create:andesite_alloy"
+    }
+  },
+  "result": {
+    "id": "create_contour:contour_oculus",
+    "count": 10
+  },
+  "accept_mirrored": true
+}

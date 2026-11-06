@@ -1,0 +1,76 @@
+{
+  "variants": {
+    "edge=dn,waterlogged=true": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=dn,waterlogged=false": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=ds,waterlogged=true": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=ds,waterlogged=false": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=de,waterlogged=true": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=de,waterlogged=false": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=dw,waterlogged=true": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=dw,waterlogged=false": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=un,waterlogged=true": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=un,waterlogged=false": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=us,waterlogged=true": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=us,waterlogged=false": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=ue,waterlogged=true": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=ue,waterlogged=false": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=uw,waterlogged=true": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=uw,waterlogged=false": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=ne,waterlogged=true": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=ne,waterlogged=false": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=nw,waterlogged=true": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=nw,waterlogged=false": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=se,waterlogged=true": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=se,waterlogged=false": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=sw,waterlogged=true": {
+      "model": "create_contour:block/contour_ogee"
+    },
+    "edge=sw,waterlogged=false": {
+      "model": "create_contour:block/contour_ogee"
+    }
+  }
+}

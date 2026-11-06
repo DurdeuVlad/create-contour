@@ -1,0 +1,16 @@
+{
+ "variants": {
+  "lit=false,waterlogged=false": {
+   "model": "create_contour:block/contour_lamp"
+  },
+  "lit=false,waterlogged=true": {
+   "model": "create_contour:block/contour_lamp"
+  },
+  "lit=true,waterlogged=false": {
+   "model": "create_contour:block/contour_lamp"
+  },
+  "lit=true,waterlogged=true": {
+   "model": "create_contour:block/contour_lamp"
+  }
+ }
+}

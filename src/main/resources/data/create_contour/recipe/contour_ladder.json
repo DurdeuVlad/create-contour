@@ -1,0 +1,20 @@
+{
+ "type": "minecraft:crafting_shaped",
+ "category": "building",
+ "pattern": [
+  "NAN",
+  "N N"
+ ],
+ "key": {
+  "N": {
+   "item": "minecraft:iron_nugget"
+  },
+  "A": {
+   "item": "create:andesite_alloy"
+  }
+ },
+ "result": {
+  "id": "create_contour:contour_ladder",
+  "count": 3
+ }
+}

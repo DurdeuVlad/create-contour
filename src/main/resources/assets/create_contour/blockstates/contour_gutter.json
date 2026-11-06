@@ -1,0 +1,112 @@
+{
+  "variants": {
+    "axis=x,facing=up,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=x,facing=up,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=x,facing=down,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=x,facing=down,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=x,facing=north,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=x,facing=north,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=x,facing=south,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=x,facing=south,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=x,facing=east,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=x,facing=east,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=x,facing=west,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=x,facing=west,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=y,facing=up,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=y,facing=up,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=y,facing=down,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=y,facing=down,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=y,facing=north,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=y,facing=north,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=y,facing=south,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=y,facing=south,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=y,facing=east,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=y,facing=east,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=y,facing=west,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=y,facing=west,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=z,facing=up,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=z,facing=up,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=z,facing=down,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=z,facing=down,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=z,facing=north,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=z,facing=north,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=z,facing=south,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=z,facing=south,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=z,facing=east,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=z,facing=east,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=z,facing=west,waterlogged=true": {
+      "model": "create_contour:block/contour_gutter"
+    },
+    "axis=z,facing=west,waterlogged=false": {
+      "model": "create_contour:block/contour_gutter"
+    }
+  }
+}

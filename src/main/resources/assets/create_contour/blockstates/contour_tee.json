@@ -1,0 +1,76 @@
+{
+  "variants": {
+    "tee=xd,waterlogged=true": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=xd,waterlogged=false": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=xu,waterlogged=true": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=xu,waterlogged=false": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=xn,waterlogged=true": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=xn,waterlogged=false": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=xs,waterlogged=true": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=xs,waterlogged=false": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=yn,waterlogged=true": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=yn,waterlogged=false": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=ys,waterlogged=true": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=ys,waterlogged=false": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=ye,waterlogged=true": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=ye,waterlogged=false": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=yw,waterlogged=true": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=yw,waterlogged=false": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=zd,waterlogged=true": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=zd,waterlogged=false": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=zu,waterlogged=true": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=zu,waterlogged=false": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=ze,waterlogged=true": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=ze,waterlogged=false": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=zw,waterlogged=true": {
+      "model": "create_contour:block/contour_tee"
+    },
+    "tee=zw,waterlogged=false": {
+      "model": "create_contour:block/contour_tee"
+    }
+  }
+}

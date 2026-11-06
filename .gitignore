@@ -1,0 +1,43 @@
+# Gradle / Java build output
+.gradle/
+build/
+out/
+bin/
+run/
+runs/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.factorypath
+*.code-workspace
+
+# JVM / crash artifacts
+*.log
+*.hprof
+hs_err_pid*.log
+replay_pid*.log
+
+# Local environment
+local.properties
+.env
+.env.*
+
+# Local dependency/tool caches (verification artifacts, not sources)
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Test/QA evidence: keep the small manifest, ignore bulky captures
+docs/evidence/recordings/
+docs/evidence/screenshots/
+docs/evidence/logs/
+!docs/evidence/manifest.md
+run-gametest/

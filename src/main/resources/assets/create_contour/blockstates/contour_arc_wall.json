@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "corner=ne,waterlogged=true": {
+      "model": "create_contour:block/contour_arc_wall"
+    },
+    "corner=ne,waterlogged=false": {
+      "model": "create_contour:block/contour_arc_wall"
+    },
+    "corner=se,waterlogged=true": {
+      "model": "create_contour:block/contour_arc_wall"
+    },
+    "corner=se,waterlogged=false": {
+      "model": "create_contour:block/contour_arc_wall"
+    },
+    "corner=sw,waterlogged=true": {
+      "model": "create_contour:block/contour_arc_wall"
+    },
+    "corner=sw,waterlogged=false": {
+      "model": "create_contour:block/contour_arc_wall"
+    },
+    "corner=nw,waterlogged=true": {
+      "model": "create_contour:block/contour_arc_wall"
+    },
+    "corner=nw,waterlogged=false": {
+      "model": "create_contour:block/contour_arc_wall"
+    }
+  }
+}

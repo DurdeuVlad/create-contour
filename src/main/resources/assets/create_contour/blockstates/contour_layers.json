@@ -1,0 +1,52 @@
+{
+ "variants": {
+  "layers=1,waterlogged=false": {
+   "model": "create_contour:block/contour_layers"
+  },
+  "layers=1,waterlogged=true": {
+   "model": "create_contour:block/contour_layers"
+  },
+  "layers=2,waterlogged=false": {
+   "model": "create_contour:block/contour_layers"
+  },
+  "layers=2,waterlogged=true": {
+   "model": "create_contour:block/contour_layers"
+  },
+  "layers=3,waterlogged=false": {
+   "model": "create_contour:block/contour_layers"
+  },
+  "layers=3,waterlogged=true": {
+   "model": "create_contour:block/contour_layers"
+  },
+  "layers=4,waterlogged=false": {
+   "model": "create_contour:block/contour_layers"
+  },
+  "layers=4,waterlogged=true": {
+   "model": "create_contour:block/contour_layers"
+  },
+  "layers=5,waterlogged=false": {
+   "model": "create_contour:block/contour_layers"
+  },
+  "layers=5,waterlogged=true": {
+   "model": "create_contour:block/contour_layers"
+  },
+  "layers=6,waterlogged=false": {
+   "model": "create_contour:block/contour_layers"
+  },
+  "layers=6,waterlogged=true": {
+   "model": "create_contour:block/contour_layers"
+  },
+  "layers=7,waterlogged=false": {
+   "model": "create_contour:block/contour_layers"
+  },
+  "layers=7,waterlogged=true": {
+   "model": "create_contour:block/contour_layers"
+  },
+  "layers=8,waterlogged=false": {
+   "model": "create_contour:block/contour_layers"
+  },
+  "layers=8,waterlogged=true": {
+   "model": "create_contour:block/contour_layers"
+  }
+ }
+}

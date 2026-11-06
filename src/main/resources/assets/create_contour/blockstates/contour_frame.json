@@ -1,0 +1,10 @@
+{
+ "variants": {
+  "waterlogged=false": {
+   "model": "create_contour:block/contour_frame"
+  },
+  "waterlogged=true": {
+   "model": "create_contour:block/contour_frame"
+  }
+ }
+}

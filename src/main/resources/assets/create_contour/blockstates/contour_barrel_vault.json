@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "axis=x,half=bottom,waterlogged=true": {
+      "model": "create_contour:block/contour_barrel_vault"
+    },
+    "axis=x,half=bottom,waterlogged=false": {
+      "model": "create_contour:block/contour_barrel_vault"
+    },
+    "axis=x,half=top,waterlogged=true": {
+      "model": "create_contour:block/contour_barrel_vault"
+    },
+    "axis=x,half=top,waterlogged=false": {
+      "model": "create_contour:block/contour_barrel_vault"
+    },
+    "axis=z,half=bottom,waterlogged=true": {
+      "model": "create_contour:block/contour_barrel_vault"
+    },
+    "axis=z,half=bottom,waterlogged=false": {
+      "model": "create_contour:block/contour_barrel_vault"
+    },
+    "axis=z,half=top,waterlogged=true": {
+      "model": "create_contour:block/contour_barrel_vault"
+    },
+    "axis=z,half=top,waterlogged=false": {
+      "model": "create_contour:block/contour_barrel_vault"
+    }
+  }
+}

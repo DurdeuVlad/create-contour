@@ -1,0 +1,52 @@
+{
+  "variants": {
+    "corner=ne,half=top,waterlogged=true": {
+      "model": "create_contour:block/contour_notch"
+    },
+    "corner=ne,half=top,waterlogged=false": {
+      "model": "create_contour:block/contour_notch"
+    },
+    "corner=ne,half=bottom,waterlogged=true": {
+      "model": "create_contour:block/contour_notch"
+    },
+    "corner=ne,half=bottom,waterlogged=false": {
+      "model": "create_contour:block/contour_notch"
+    },
+    "corner=se,half=top,waterlogged=true": {
+      "model": "create_contour:block/contour_notch"
+    },
+    "corner=se,half=top,waterlogged=false": {
+      "model": "create_contour:block/contour_notch"
+    },
+    "corner=se,half=bottom,waterlogged=true": {
+      "model": "create_contour:block/contour_notch"
+    },
+    "corner=se,half=bottom,waterlogged=false": {
+      "model": "create_contour:block/contour_notch"
+    },
+    "corner=sw,half=top,waterlogged=true": {
+      "model": "create_contour:block/contour_notch"
+    },
+    "corner=sw,half=top,waterlogged=false": {
+      "model": "create_contour:block/contour_notch"
+    },
+    "corner=sw,half=bottom,waterlogged=true": {
+      "model": "create_contour:block/contour_notch"
+    },
+    "corner=sw,half=bottom,waterlogged=false": {
+      "model": "create_contour:block/contour_notch"
+    },
+    "corner=nw,half=top,waterlogged=true": {
+      "model": "create_contour:block/contour_notch"
+    },
+    "corner=nw,half=top,waterlogged=false": {
+      "model": "create_contour:block/contour_notch"
+    },
+    "corner=nw,half=bottom,waterlogged=true": {
+      "model": "create_contour:block/contour_notch"
+    },
+    "corner=nw,half=bottom,waterlogged=false": {
+      "model": "create_contour:block/contour_notch"
+    }
+  }
+}

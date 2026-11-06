@@ -1,0 +1,148 @@
+{
+ "variants": {
+  "face=floor,facing=north,powered=false,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=floor,facing=north,powered=false,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=floor,facing=north,powered=true,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=floor,facing=north,powered=true,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=floor,facing=south,powered=false,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=floor,facing=south,powered=false,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=floor,facing=south,powered=true,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=floor,facing=south,powered=true,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=floor,facing=east,powered=false,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=floor,facing=east,powered=false,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=floor,facing=east,powered=true,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=floor,facing=east,powered=true,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=floor,facing=west,powered=false,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=floor,facing=west,powered=false,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=floor,facing=west,powered=true,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=floor,facing=west,powered=true,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=north,powered=false,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=north,powered=false,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=north,powered=true,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=north,powered=true,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=south,powered=false,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=south,powered=false,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=south,powered=true,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=south,powered=true,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=east,powered=false,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=east,powered=false,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=east,powered=true,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=east,powered=true,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=west,powered=false,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=west,powered=false,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=west,powered=true,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=wall,facing=west,powered=true,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=north,powered=false,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=north,powered=false,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=north,powered=true,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=north,powered=true,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=south,powered=false,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=south,powered=false,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=south,powered=true,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=south,powered=true,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=east,powered=false,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=east,powered=false,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=east,powered=true,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=east,powered=true,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=west,powered=false,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=west,powered=false,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=west,powered=true,waterlogged=false": {
+   "model": "create_contour:block/contour_button"
+  },
+  "face=ceiling,facing=west,powered=true,waterlogged=true": {
+   "model": "create_contour:block/contour_button"
+  }
+ }
+}

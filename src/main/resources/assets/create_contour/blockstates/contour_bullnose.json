@@ -1,0 +1,76 @@
+{
+  "variants": {
+    "edge=dn,waterlogged=true": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=dn,waterlogged=false": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=ds,waterlogged=true": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=ds,waterlogged=false": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=de,waterlogged=true": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=de,waterlogged=false": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=dw,waterlogged=true": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=dw,waterlogged=false": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=un,waterlogged=true": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=un,waterlogged=false": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=us,waterlogged=true": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=us,waterlogged=false": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=ue,waterlogged=true": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=ue,waterlogged=false": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=uw,waterlogged=true": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=uw,waterlogged=false": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=ne,waterlogged=true": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=ne,waterlogged=false": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=nw,waterlogged=true": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=nw,waterlogged=false": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=se,waterlogged=true": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=se,waterlogged=false": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=sw,waterlogged=true": {
+      "model": "create_contour:block/contour_bullnose"
+    },
+    "edge=sw,waterlogged=false": {
+      "model": "create_contour:block/contour_bullnose"
+    }
+  }
+}

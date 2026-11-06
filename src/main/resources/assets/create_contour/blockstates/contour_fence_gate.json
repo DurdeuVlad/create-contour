@@ -1,0 +1,100 @@
+{
+ "variants": {
+  "facing=north,in_wall=false,open=false,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=north,in_wall=false,open=false,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=north,in_wall=false,open=true,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=north,in_wall=false,open=true,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=north,in_wall=true,open=false,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=north,in_wall=true,open=false,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=north,in_wall=true,open=true,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=north,in_wall=true,open=true,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=south,in_wall=false,open=false,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=south,in_wall=false,open=false,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=south,in_wall=false,open=true,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=south,in_wall=false,open=true,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=south,in_wall=true,open=false,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=south,in_wall=true,open=false,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=south,in_wall=true,open=true,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=south,in_wall=true,open=true,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=east,in_wall=false,open=false,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=east,in_wall=false,open=false,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=east,in_wall=false,open=true,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=east,in_wall=false,open=true,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=east,in_wall=true,open=false,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=east,in_wall=true,open=false,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=east,in_wall=true,open=true,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=east,in_wall=true,open=true,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=west,in_wall=false,open=false,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=west,in_wall=false,open=false,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=west,in_wall=false,open=true,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=west,in_wall=false,open=true,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=west,in_wall=true,open=false,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=west,in_wall=true,open=false,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=west,in_wall=true,open=true,waterlogged=false": {
+   "model": "create_contour:block/contour_fence_gate"
+  },
+  "facing=west,in_wall=true,open=true,waterlogged=true": {
+   "model": "create_contour:block/contour_fence_gate"
+  }
+ }
+}

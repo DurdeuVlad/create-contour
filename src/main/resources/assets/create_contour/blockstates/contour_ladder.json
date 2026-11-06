@@ -1,0 +1,28 @@
+{
+ "variants": {
+  "facing=north,waterlogged=false": {
+   "model": "create_contour:block/contour_ladder"
+  },
+  "facing=north,waterlogged=true": {
+   "model": "create_contour:block/contour_ladder"
+  },
+  "facing=south,waterlogged=false": {
+   "model": "create_contour:block/contour_ladder"
+  },
+  "facing=south,waterlogged=true": {
+   "model": "create_contour:block/contour_ladder"
+  },
+  "facing=east,waterlogged=false": {
+   "model": "create_contour:block/contour_ladder"
+  },
+  "facing=east,waterlogged=true": {
+   "model": "create_contour:block/contour_ladder"
+  },
+  "facing=west,waterlogged=false": {
+   "model": "create_contour:block/contour_ladder"
+  },
+  "facing=west,waterlogged=true": {
+   "model": "create_contour:block/contour_ladder"
+  }
+ }
+}

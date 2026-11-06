@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "pattern": [
+    "BBB",
+    "NA ",
+    "N  "
+  ],
+  "key": {
+    "B": {
+      "item": "create:brass_ingot"
+    },
+    "N": {
+      "item": "minecraft:iron_nugget"
+    },
+    "A": {
+      "item": "create:andesite_alloy"
+    }
+  },
+  "result": {
+    "id": "create_contour:contour_placer",
+    "count": 1
+  }
+}

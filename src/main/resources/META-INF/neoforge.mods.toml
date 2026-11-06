@@ -1,0 +1,33 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "MIT"
+
+[[mods]]
+modId = "create_contour"
+version = "${mod_version}"
+displayName = "Create: Contour"
+description = '''Copycat-style shape blocks for Create: slabs, vertical slabs,
+stairs and more, paintable with other blocks' materials.'''
+authors = "Create: Contour contributors"
+credits = "Built on Create by the Create team / Creators of Create (MIT code; Create assets are All Rights Reserved and not reused)."
+
+[[dependencies.create_contour]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1.213,21.2)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.create_contour]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.create_contour]]
+modId = "create"
+type = "required"
+versionRange = "[6.0.8,6.1)"
+ordering = "AFTER"
+side = "BOTH"

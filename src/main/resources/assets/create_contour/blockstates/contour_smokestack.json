@@ -1,0 +1,22 @@
+{
+  "variants": {
+    "axis=x,waterlogged=true": {
+      "model": "create_contour:block/contour_smokestack"
+    },
+    "axis=x,waterlogged=false": {
+      "model": "create_contour:block/contour_smokestack"
+    },
+    "axis=y,waterlogged=true": {
+      "model": "create_contour:block/contour_smokestack"
+    },
+    "axis=y,waterlogged=false": {
+      "model": "create_contour:block/contour_smokestack"
+    },
+    "axis=z,waterlogged=true": {
+      "model": "create_contour:block/contour_smokestack"
+    },
+    "axis=z,waterlogged=false": {
+      "model": "create_contour:block/contour_smokestack"
+    }
+  }
+}

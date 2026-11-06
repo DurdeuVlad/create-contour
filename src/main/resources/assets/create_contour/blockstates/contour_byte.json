@@ -1,0 +1,52 @@
+{
+ "variants": {
+  "octant=x0y0z0,waterlogged=false": {
+   "model": "create_contour:block/contour_byte"
+  },
+  "octant=x0y0z0,waterlogged=true": {
+   "model": "create_contour:block/contour_byte"
+  },
+  "octant=x0y0z1,waterlogged=false": {
+   "model": "create_contour:block/contour_byte"
+  },
+  "octant=x0y0z1,waterlogged=true": {
+   "model": "create_contour:block/contour_byte"
+  },
+  "octant=x0y1z0,waterlogged=false": {
+   "model": "create_contour:block/contour_byte"
+  },
+  "octant=x0y1z0,waterlogged=true": {
+   "model": "create_contour:block/contour_byte"
+  },
+  "octant=x0y1z1,waterlogged=false": {
+   "model": "create_contour:block/contour_byte"
+  },
+  "octant=x0y1z1,waterlogged=true": {
+   "model": "create_contour:block/contour_byte"
+  },
+  "octant=x1y0z0,waterlogged=false": {
+   "model": "create_contour:block/contour_byte"
+  },
+  "octant=x1y0z0,waterlogged=true": {
+   "model": "create_contour:block/contour_byte"
+  },
+  "octant=x1y0z1,waterlogged=false": {
+   "model": "create_contour:block/contour_byte"
+  },
+  "octant=x1y0z1,waterlogged=true": {
+   "model": "create_contour:block/contour_byte"
+  },
+  "octant=x1y1z0,waterlogged=false": {
+   "model": "create_contour:block/contour_byte"
+  },
+  "octant=x1y1z0,waterlogged=true": {
+   "model": "create_contour:block/contour_byte"
+  },
+  "octant=x1y1z1,waterlogged=false": {
+   "model": "create_contour:block/contour_byte"
+  },
+  "octant=x1y1z1,waterlogged=true": {
+   "model": "create_contour:block/contour_byte"
+  }
+ }
+}

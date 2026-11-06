@@ -1,0 +1,220 @@
+{
+  "variants": {
+    "facing=down,half=down,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=down,half=down,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=down,half=up,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=down,half=up,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=down,half=north,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=down,half=north,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=down,half=south,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=down,half=south,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=down,half=east,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=down,half=east,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=down,half=west,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=down,half=west,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=up,half=down,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=up,half=down,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=up,half=up,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=up,half=up,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=up,half=north,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=up,half=north,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=up,half=south,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=up,half=south,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=up,half=east,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=up,half=east,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=up,half=west,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=up,half=west,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=north,half=down,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=north,half=down,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=north,half=up,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=north,half=up,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=north,half=north,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=north,half=north,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=north,half=south,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=north,half=south,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=north,half=east,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=north,half=east,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=north,half=west,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=north,half=west,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=south,half=down,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=south,half=down,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=south,half=up,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=south,half=up,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=south,half=north,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=south,half=north,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=south,half=south,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=south,half=south,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=south,half=east,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=south,half=east,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=south,half=west,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=south,half=west,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=east,half=down,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=east,half=down,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=east,half=up,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=east,half=up,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=east,half=north,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=east,half=north,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=east,half=south,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=east,half=south,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=east,half=east,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=east,half=east,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=east,half=west,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=east,half=west,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=west,half=down,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=west,half=down,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=west,half=up,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=west,half=up,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=west,half=north,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=west,half=north,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=west,half=south,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=west,half=south,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=west,half=east,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=west,half=east,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=west,half=west,waterlogged=true": {
+      "model": "create_contour:block/contour_half_panel"
+    },
+    "facing=west,half=west,waterlogged=false": {
+      "model": "create_contour:block/contour_half_panel"
+    }
+  }
+}

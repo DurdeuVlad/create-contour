@@ -1,0 +1,22 @@
+{
+  "type": "create:mechanical_crafting",
+  "category": "building",
+  "pattern": [
+    "NNN",
+    " N ",
+    "ANA"
+  ],
+  "key": {
+    "N": {
+      "item": "minecraft:iron_nugget"
+    },
+    "A": {
+      "item": "create:andesite_alloy"
+    }
+  },
+  "result": {
+    "id": "create_contour:contour_chimney",
+    "count": 10
+  },
+  "accept_mirrored": true
+}

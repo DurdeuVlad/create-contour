@@ -1,0 +1,25 @@
+{
+  "type": "create:mechanical_crafting",
+  "category": "tools",
+  "pattern": [
+    "BBB",
+    "NA ",
+    "N A"
+  ],
+  "key": {
+    "B": {
+      "item": "create:brass_ingot"
+    },
+    "N": {
+      "item": "minecraft:iron_nugget"
+    },
+    "A": {
+      "item": "create:andesite_alloy"
+    }
+  },
+  "result": {
+    "id": "create_contour:contour_placer",
+    "count": 1
+  },
+  "accept_mirrored": true
+}

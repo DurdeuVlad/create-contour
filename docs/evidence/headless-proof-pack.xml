@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="net.createcontour.HeadlessLogicTests" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-03T22:03:58.957Z" hostname="DESKTOP-NJQADHM" time="0.975">
+  <properties/>
+  <testcase name="shapeGridBuildsExpectedMask()" classname="net.createcontour.HeadlessLogicTests" time="0.965"/>
+  <testcase name="cellMaskCardinality()" classname="net.createcontour.HeadlessLogicTests" time="0.005"/>
+  <testcase name="innerOuterMirrorSymmetry()" classname="net.createcontour.HeadlessLogicTests" time="0.001"/>
+  <testcase name="tallHalfFacesFacing()" classname="net.createcontour.HeadlessLogicTests" time="0.001"/>
+  <system-out><![CDATA[WARN StatusConsoleListener Advanced terminal features are not available in this environment
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

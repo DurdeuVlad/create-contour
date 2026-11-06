@@ -1,0 +1,148 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.148'
+}
+
+// --- Compatibility profile selection --------------------------------------
+// pack   = primary target: RC2 pack profile (Create 6.0.10 / NF 21.1.248)
+// legacy = prompt baseline (Create 6.0.8-168 / NF 21.1.213)
+// Only these two values are accepted; a misspelling must fail loudly.
+def compatProfile = (project.findProperty('compatProfile') ?: 'pack').toString()
+if (!['pack', 'legacy'].contains(compatProfile)) {
+    throw new GradleException(
+        "Invalid -PcompatProfile='${compatProfile}'. Allowed values: pack, legacy.")
+}
+logger.lifecycle("compatProfile=${compatProfile}")
+
+def neoforgeVersion = project.property("neoforge_${compatProfile}").toString()
+def createVersion   = project.property("create_${compatProfile}").toString()
+def jeiVersion      = project.property("jei_${compatProfile}").toString()
+
+group = project.property('mod_group').toString()
+version = project.property('mod_version').toString()
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(project.property('java_version').toString())
+    }
+}
+
+repositories {
+    mavenCentral()
+    // Create + Ponder + Flywheel (Create's own maven)
+    maven { url = 'https://maven.createmod.net' }
+    // JEI (soft/optional, compile-time only)
+    maven { url = 'https://maven.blamejared.com' }
+}
+
+neoForge {
+    version = neoforgeVersion
+    runs {
+        client {
+            client()
+        }
+        server {
+            server()
+        }
+        // MDK-official GameTest run: the `type` property accepts
+        // "gameTestServer" even without a convenience method.
+        gameTestServer {
+            type = "gameTestServer"
+            gameDirectory = project.file('run-gametest')
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'create_contour'
+            systemProperty 'create_contour.gametests', 'true'
+        }
+        // Opt-in QA client: real dev client + render smoke on world join.
+        clientQA {
+            client()
+            gameDirectory = project.file('run')
+            systemProperty 'create_contour.renderSmoke', 'true'
+            programArguments.addAll '--quickPlaySingleplayer', 'Contour QA'
+        }
+    }
+    mods {
+        create_contour {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
+dependencies {
+    // Create: declared explicitly with transitives OFF so upstream dev-POM
+    // non-required integrations (FTB, JourneyMap, Architectury, ...) never
+    // leak into our resolved classpath. Create's true required runtime deps
+    // (Registrate, Ponder, Flywheel) arrive inside its jar via JarJar.
+    implementation("com.simibubi.create:create-1.21.1:${createVersion}") {
+        transitive = false
+    }
+
+    // JEI: soft/optional integration - compile-time only, never a hard dep.
+    compileOnly("mezz.jei:jei-1.21.1-neoforge:${jeiVersion}") {
+        transitive = false
+    }
+
+    // Ponder API: Create types implement Ponder interfaces, so the API
+    // must be on the compile classpath. Bundled at RUNTIME via JarJar in
+    // the pack profile (bundled 1.0.82 is correct) - compileOnly there.
+    def ponderCoord = project.property("ponder_coord_${compatProfile}").toString()
+    compileOnly(ponderCoord) {
+        transitive = false
+    }
+
+    // Legacy-only runtime pin: the requested Ponder target is 1.0.66 while
+    // Create 6.0.8-168 bundles 1.0.64 via JarJar. Declaring the explicit
+    // official-maven artifact makes the dev runtime select 1.0.66.
+    if (compatProfile == 'legacy') {
+        runtimeOnly(ponderCoord) {
+            transitive = false
+        }
+    }
+
+    // Headless logic tests (registry-free boundaries: geometry parity,
+    // material acceptance). World-dependent GameTests live in the
+    // registered create_contour gametest namespace.
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+jar {
+    // Profile-classified output: the pack jar keeps the default name;
+    // legacy gets a classifier so profile builds cannot quietly
+    // overwrite each other's artifacts.
+    if (compatProfile == 'legacy') {
+        archiveClassifier = 'legacy'
+    }
+    manifest {
+        attributes(
+            'Implementation-Title': project.property('mod_id').toString(),
+            'Implementation-Version': project.version.toString(),
+            'Implementation-Vendor': 'Create: Contour contributors'
+        )
+    }
+    // Ship our own MIT license plus required third-party license notices
+    // (Gradle wrapper Apache-2.0, Create MIT attribution) inside the jar.
+    from(rootDir) {
+        include 'LICENSE'
+        include 'licenses/**'
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+// MDG wires the modded MC classpath only to `main`; mirror it into test
+// so headless logic tests can touch BlockState/Shapes/registries.
+sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
+sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.named('processResources') {
+    inputs.property 'mod_version', project.version.toString()
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand 'mod_version': project.version.toString()
+    }
+}

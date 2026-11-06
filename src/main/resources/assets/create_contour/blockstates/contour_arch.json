@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=x,waterlogged=true": {
+      "model": "create_contour:block/contour_arch"
+    },
+    "axis=x,waterlogged=false": {
+      "model": "create_contour:block/contour_arch"
+    },
+    "axis=z,waterlogged=true": {
+      "model": "create_contour:block/contour_arch"
+    },
+    "axis=z,waterlogged=false": {
+      "model": "create_contour:block/contour_arch"
+    }
+  }
+}

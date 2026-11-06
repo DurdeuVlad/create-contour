@@ -1,0 +1,16 @@
+{
+ "variants": {
+  "powered=false,waterlogged=false": {
+   "model": "create_contour:block/contour_pressure_plate"
+  },
+  "powered=false,waterlogged=true": {
+   "model": "create_contour:block/contour_pressure_plate"
+  },
+  "powered=true,waterlogged=false": {
+   "model": "create_contour:block/contour_pressure_plate"
+  },
+  "powered=true,waterlogged=true": {
+   "model": "create_contour:block/contour_pressure_plate"
+  }
+ }
+}

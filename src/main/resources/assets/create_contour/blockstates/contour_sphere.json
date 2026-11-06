@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "waterlogged=true": {
+      "model": "create_contour:block/contour_sphere"
+    },
+    "waterlogged=false": {
+      "model": "create_contour:block/contour_sphere"
+    }
+  }
+}
