@@ -170,10 +170,17 @@ public class ContourDoorBlock extends ContourBlock {
 				return r;
 			}
 		}
+		if (!canManualOpen())
+			return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		if (level.isClientSide)
 			return net.minecraft.world.ItemInteractionResult.SUCCESS;
 		setOpen(level, lower(pos, state), !state.getValue(OPEN));
 		return net.minecraft.world.ItemInteractionResult.CONSUME;
+	}
+
+	/** Wooden doors respond to hands; the iron variant is redstone-only. */
+	protected boolean canManualOpen() {
+		return true;
 	}
 
 	private void setOpen(Level level, BlockPos lowerPos, boolean open) {

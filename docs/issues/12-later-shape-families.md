@@ -193,8 +193,16 @@ the gothic flyer - a pier topped by a quarter-arc strut springing
 into a wall abutment, the arched counterpart of the stepped
 buttress. The coping is the stepped wall-top cap finishing flat
 walls the way the ridge caps a gable.
-Remaining backlog: sliding/folding doors, Create-flavored
-functional attachments, multipart panels (ADR-013).
+Wave 50 closed the remaining geometric gap: corner_slice (stepped
+45-degree wedge, FACING x LAYERS 1-4), byte_panel (quarter face
+panel, FACING x QUADRANT), half_layer (1px-fine layers 1-8), and
+the iron door/trapdoor variants (identical geometry, redstone-only
+via a canManualOpen gate; wrench still re-hinges).
+
+Remaining backlog: sliding/folding doors (animated multi-part,
+needs its own motion contract), Create-flavored functional
+attachments that wrap Create kinetic/fluid block entities (needs
+a design ADR), true multipart panels (ADR-013 occupancy rework).
 
 ## Verification
 

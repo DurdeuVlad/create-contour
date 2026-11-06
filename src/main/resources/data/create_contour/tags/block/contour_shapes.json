@@ -106,6 +106,14 @@
     "create_contour:contour_vertical_step",
     "create_contour:contour_beam",
     "create_contour:contour_half_panel",
-    "create_contour:contour_flat_pane"
+    "create_contour:contour_flat_pane",
+    "create_contour:contour_corner_slice",
+    "create_contour:contour_byte_panel",
+    "create_contour:contour_half_layer",
+    "create_contour:contour_iron_door",
+    "create_contour:contour_iron_trapdoor",
+    "create_contour:contour_sliding_door",
+    "create_contour:contour_folding_door",
+    "create_contour:contour_catwalk"
   ]
 }

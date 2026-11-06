@@ -106,7 +106,15 @@ import net.createcontour.block.ContourPilotBlock;
 import net.createcontour.block.ContourVerticalStepBlock;
 import net.createcontour.block.ContourBeamBlock;
 import net.createcontour.block.ContourHalfPanelBlock;
-import net.createcontour.block.ContourFlatPaneBlock;
+import net.createcontour.block.ContourFlatPaneBlock;import net.createcontour.block.ContourCornerSliceBlock;
+import net.createcontour.block.ContourBytePanelBlock;
+import net.createcontour.block.ContourHalfLayerBlock;
+import net.createcontour.block.ContourIronDoorBlock;
+import net.createcontour.block.ContourIronTrapdoorBlock;
+import net.createcontour.block.ContourSlidingDoorBlock;
+import net.createcontour.block.ContourFoldingDoorBlock;
+import net.createcontour.block.ContourCatwalkBlock;
+
 import net.createcontour.block.ContourPortcullisBlock;
 import net.createcontour.block.ContourWheelBlock;
 import net.createcontour.blockentity.ContourBlockEntity;
@@ -415,6 +423,38 @@ public final class ContourRegistries {
 		BLOCKS.register("contour_flat_pane",
 			() -> new ContourFlatPaneBlock(shapeProps()));
 
+	public static final DeferredBlock<ContourCornerSliceBlock> CONTOUR_CORNER_SLICE =
+		BLOCKS.register("contour_corner_slice",
+			() -> new ContourCornerSliceBlock(shapeProps()));
+
+	public static final DeferredBlock<ContourBytePanelBlock> CONTOUR_BYTE_PANEL =
+		BLOCKS.register("contour_byte_panel",
+			() -> new ContourBytePanelBlock(shapeProps()));
+
+	public static final DeferredBlock<ContourHalfLayerBlock> CONTOUR_HALF_LAYER =
+		BLOCKS.register("contour_half_layer",
+			() -> new ContourHalfLayerBlock(shapeProps()));
+
+	public static final DeferredBlock<ContourIronDoorBlock> CONTOUR_IRON_DOOR =
+		BLOCKS.register("contour_iron_door",
+			() -> new ContourIronDoorBlock(shapeProps()));
+
+	public static final DeferredBlock<ContourIronTrapdoorBlock> CONTOUR_IRON_TRAPDOOR =
+		BLOCKS.register("contour_iron_trapdoor",
+			() -> new ContourIronTrapdoorBlock(shapeProps()));
+
+	public static final DeferredBlock<ContourSlidingDoorBlock> CONTOUR_SLIDING_DOOR =
+		BLOCKS.register("contour_sliding_door",
+			() -> new ContourSlidingDoorBlock(shapeProps()));
+
+	public static final DeferredBlock<ContourFoldingDoorBlock> CONTOUR_FOLDING_DOOR =
+		BLOCKS.register("contour_folding_door",
+			() -> new ContourFoldingDoorBlock(shapeProps()));
+
+	public static final DeferredBlock<ContourCatwalkBlock> CONTOUR_CATWALK =
+		BLOCKS.register("contour_catwalk",
+			() -> new ContourCatwalkBlock(shapeProps()));
+
 	public static final DeferredItem<ContourBlockItem> CONTOUR_SLAB_ITEM =
 		ITEMS.register("contour_slab", () -> new ContourBlockItem(CONTOUR_SLAB.get()));
 	public static final DeferredItem<ContourBlockItem> CONTOUR_VERTICAL_SLAB_ITEM =
@@ -708,6 +748,38 @@ public final class ContourRegistries {
 		ITEMS.register("contour_flat_pane",
 			() -> new ContourBlockItem(CONTOUR_FLAT_PANE.get()));
 
+	public static final DeferredItem<ContourBlockItem> CONTOUR_CORNER_SLICE_ITEM =
+		ITEMS.register("contour_corner_slice",
+			() -> new ContourBlockItem(CONTOUR_CORNER_SLICE.get()));
+
+	public static final DeferredItem<ContourBlockItem> CONTOUR_BYTE_PANEL_ITEM =
+		ITEMS.register("contour_byte_panel",
+			() -> new ContourBlockItem(CONTOUR_BYTE_PANEL.get()));
+
+	public static final DeferredItem<ContourBlockItem> CONTOUR_HALF_LAYER_ITEM =
+		ITEMS.register("contour_half_layer",
+			() -> new ContourBlockItem(CONTOUR_HALF_LAYER.get()));
+
+	public static final DeferredItem<ContourBlockItem> CONTOUR_IRON_DOOR_ITEM =
+		ITEMS.register("contour_iron_door",
+			() -> new ContourBlockItem(CONTOUR_IRON_DOOR.get()));
+
+	public static final DeferredItem<ContourBlockItem> CONTOUR_IRON_TRAPDOOR_ITEM =
+		ITEMS.register("contour_iron_trapdoor",
+			() -> new ContourBlockItem(CONTOUR_IRON_TRAPDOOR.get()));
+
+	public static final DeferredItem<ContourBlockItem> CONTOUR_SLIDING_DOOR_ITEM =
+		ITEMS.register("contour_sliding_door",
+			() -> new ContourBlockItem(CONTOUR_SLIDING_DOOR.get()));
+
+	public static final DeferredItem<ContourBlockItem> CONTOUR_FOLDING_DOOR_ITEM =
+		ITEMS.register("contour_folding_door",
+			() -> new ContourBlockItem(CONTOUR_FOLDING_DOOR.get()));
+
+	public static final DeferredItem<ContourBlockItem> CONTOUR_CATWALK_ITEM =
+		ITEMS.register("contour_catwalk",
+			() -> new ContourBlockItem(CONTOUR_CATWALK.get()));
+
 	public static final DeferredItem<ContourCodexItem> CONTOUR_CODEX =
 		ITEMS.register("contour_codex", () -> new ContourCodexItem(
 			new net.minecraft.world.item.Item.Properties().stacksTo(1)));
@@ -779,7 +851,10 @@ public final class ContourRegistries {
 				CONTOUR_BUFFER.get(), CONTOUR_SMOKESTACK.get(),
 				CONTOUR_SEMAPHORE.get(), CONTOUR_PILOT.get(),
 				CONTOUR_VERTICAL_STEP.get(), CONTOUR_BEAM.get(),
-				CONTOUR_HALF_PANEL.get(), CONTOUR_FLAT_PANE.get())
+				CONTOUR_HALF_PANEL.get(), CONTOUR_FLAT_PANE.get(),
+				CONTOUR_CORNER_SLICE.get(), CONTOUR_BYTE_PANEL.get(), CONTOUR_HALF_LAYER.get(), CONTOUR_IRON_DOOR.get(), CONTOUR_IRON_TRAPDOOR.get(),
+				CONTOUR_SLIDING_DOOR.get(), CONTOUR_FOLDING_DOOR.get(),
+				CONTOUR_CATWALK.get())
 			.build(null));
 
 	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ContourSignBlockEntity>> CONTOUR_SIGN_BE =
@@ -899,6 +974,14 @@ public final class ContourRegistries {
 				output.accept(CONTOUR_BEAM_ITEM.get());
 				output.accept(CONTOUR_HALF_PANEL_ITEM.get());
 				output.accept(CONTOUR_FLAT_PANE_ITEM.get());
+								output.accept(CONTOUR_CORNER_SLICE_ITEM.get());
+				output.accept(CONTOUR_BYTE_PANEL_ITEM.get());
+				output.accept(CONTOUR_HALF_LAYER_ITEM.get());
+				output.accept(CONTOUR_IRON_DOOR_ITEM.get());
+				output.accept(CONTOUR_IRON_TRAPDOOR_ITEM.get());
+				output.accept(CONTOUR_SLIDING_DOOR_ITEM.get());
+				output.accept(CONTOUR_FOLDING_DOOR_ITEM.get());
+				output.accept(CONTOUR_CATWALK_ITEM.get());
 				output.accept(CONTOUR_CODEX.get());
 				output.accept(CONTOUR_BLANK_ITEM.get());
 				output.accept(CONTOUR_PLACER.get());

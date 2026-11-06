@@ -36,6 +36,21 @@ public abstract class ContourModel extends CopycatModel {
 	protected final BlockState boundMaterial;
 	private ItemOverrides overrides = ItemOverrides.EMPTY;
 
+	/**
+	 * Bounded emission cache: chunk meshing calls getQuads many times with
+	 * identical (state, side, material, renderType); without a cache each
+	 * call re-queries the material model, scans its quads and rebuilds the
+	 * whole shape mesh. Only used when no WRAPPED (CTM) data is present;
+	 * wrapped-data paths stay uncached so CTM materials stay correct.
+	 */
+	private record QuadKey(BlockState state, @Nullable Direction side,
+		@Nullable BlockState material, @Nullable RenderType renderType) {
+	}
+
+	private final com.google.common.cache.Cache<QuadKey, List<BakedQuad>>
+		quadCache = com.google.common.cache.CacheBuilder.newBuilder()
+			.maximumSize(64).build();
+
 	protected ContourModel(BakedModel original, @Nullable BlockState boundState,
 		@Nullable BlockState boundMaterial) {
 		super(original);
@@ -209,9 +224,21 @@ public abstract class ContourModel extends CopycatModel {
 			if (state == null)
 				return neutralQuads(side);
 			ModelData safe = data == null ? ModelData.EMPTY : data;
-			BlockState material = materialFromData(safe);
 			ModelData wrapped = safe.get(WRAPPED_PROPERTY) instanceof ModelData w
 				? w : ModelData.EMPTY;
+			if (wrapped.getProperties().isEmpty()) {
+				BlockState material = materialFromData(safe);
+				List<BakedQuad> cached = quadCache.getIfPresent(
+					new QuadKey(state, side, material, renderType));
+				if (cached != null)
+					return cached;
+				List<BakedQuad> quads = emitShape(state, side,
+					d -> sourcesFor(material, d, rand, wrapped, renderType));
+				quadCache.put(
+					new QuadKey(state, side, material, renderType), quads);
+				return quads;
+			}
+			BlockState material = materialFromData(safe);
 			return emitShape(state, side,
 				d -> sourcesFor(material, d, rand, wrapped, renderType));
 		} catch (RuntimeException e) {

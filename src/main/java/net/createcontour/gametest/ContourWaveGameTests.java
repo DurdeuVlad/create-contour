@@ -236,7 +236,15 @@ public class ContourWaveGameTests {
 			ContourRegistries.CONTOUR_VERTICAL_STEP.get(),
 			ContourRegistries.CONTOUR_BEAM.get(),
 			ContourRegistries.CONTOUR_HALF_PANEL.get(),
-			ContourRegistries.CONTOUR_FLAT_PANE.get()};
+			ContourRegistries.CONTOUR_FLAT_PANE.get(),
+			ContourRegistries.CONTOUR_CORNER_SLICE.get(),
+			ContourRegistries.CONTOUR_BYTE_PANEL.get(),
+			ContourRegistries.CONTOUR_HALF_LAYER.get(),
+			ContourRegistries.CONTOUR_IRON_DOOR.get(),
+			ContourRegistries.CONTOUR_IRON_TRAPDOOR.get(),
+			ContourRegistries.CONTOUR_SLIDING_DOOR.get(),
+			ContourRegistries.CONTOUR_FOLDING_DOOR.get(),
+			ContourRegistries.CONTOUR_CATWALK.get()};
 	}
 
 	private static ContourBlockEntity be(GameTestHelper h, BlockState state) {
@@ -287,7 +295,7 @@ public class ContourWaveGameTests {
 		h.assertTrue(BuiltInRegistries.BLOCK
 			.getTag(net.minecraft.tags.TagKey.create(Registries.BLOCK,
 				ResourceLocation.fromNamespaceAndPath("create_contour", "contour_shapes")))
-			.map(t -> t.size() == 106).orElse(false), "tag != 106 members");
+			.map(t -> t.size() == 114).orElse(false), "tag != 114 members");
 		h.succeed();
 	}
 
@@ -2902,6 +2910,241 @@ public class ContourWaveGameTests {
 		be5.writeSafe(tag2, h.getLevel().registryAccess());
 		h.assertTrue(tag2.getInt("PaidUnits") == 0,
 			"unpainted safeNBT exported credit");
+		h.succeed();
+	}
+
+	// --- wave 50: parity gap fill ---
+
+	@GameTest(template = "test_empty")
+	public void cornerSliceWedge(GameTestHelper h) {
+		Block p = ContourRegistries.CONTOUR_CORNER_SLICE.get();
+		var n = net.createcontour.block.ContourCornerSliceBlock.boxesFor(
+			p.defaultBlockState()
+				.setValue(net.createcontour.block.ContourCornerSliceBlock.LAYERS, 2));
+		h.assertTrue(n.size() == 2, "corner slice not 2 steps: " + n.size());
+		float[] b0 = n.get(0), b1 = n.get(1);
+		h.assertTrue(b0[0] == 0f && b0[3] == 4f && b0[5] == 2f,
+			"corner slice row0 wrong");
+		h.assertTrue(b1[2] == 2f && b1[3] == 2f && b1[5] == 4f,
+			"corner slice row1 not stepped");
+		// rotation maps the corner to the next quadrant
+		var e = p.defaultBlockState()
+			.setValue(net.createcontour.block.ContourCornerSliceBlock.FACING,
+				Direction.NORTH)
+			.rotate(net.minecraft.world.level.block.Rotation.CLOCKWISE_90)
+			.getValue(net.createcontour.block.ContourCornerSliceBlock.FACING);
+		h.assertTrue(e == Direction.EAST, "corner slice rotate wrong: " + e);
+		// layer 4 spans 8px along both edges (quarter-cell wedge)
+		var q = net.createcontour.block.ContourCornerSliceBlock.boxesFor(
+			p.defaultBlockState()
+				.setValue(net.createcontour.block.ContourCornerSliceBlock.LAYERS, 4));
+		h.assertTrue(q.size() == 4 && q.get(0)[3] == 8f,
+			"corner slice max reach wrong: " + q.size());
+		h.succeed();
+	}
+
+	@GameTest(template = "test_empty")
+	public void bytePanelQuadrant(GameTestHelper h) {
+		Block p = ContourRegistries.CONTOUR_BYTE_PANEL.get();
+		var q0 = net.createcontour.block.ContourBytePanelBlock.boxesFor(
+			p.defaultBlockState()
+				.setValue(net.createcontour.block.ContourBytePanelBlock.FACING,
+					Direction.UP)
+				.setValue(net.createcontour.block.ContourBytePanelBlock.QUADRANT, 0));
+		h.assertTrue(q0.size() == 1, "byte panel not 1 box");
+		float[] b = q0.get(0);
+		h.assertTrue(b[1] == 15f && b[4] == 16f && b[3] == 8f && b[5] == 8f,
+			"byte panel q0 not lower-left eighth");
+		var q3 = net.createcontour.block.ContourBytePanelBlock.boxesFor(
+			p.defaultBlockState()
+				.setValue(net.createcontour.block.ContourBytePanelBlock.FACING,
+					Direction.UP)
+				.setValue(net.createcontour.block.ContourBytePanelBlock.QUADRANT, 3));
+		float[] b3 = q3.get(0);
+		h.assertTrue(b3[0] == 8f && b3[2] == 8f && b3[3] == 16f && b3[5] == 16f,
+			"byte panel q3 not upper-right eighth");
+		h.succeed();
+	}
+
+	@GameTest(template = "test_empty")
+	public void halfLayerPx(GameTestHelper h) {
+		Block p = ContourRegistries.CONTOUR_HALF_LAYER.get();
+		BlockState s5 = p.defaultBlockState()
+			.setValue(net.createcontour.block.ContourHalfLayerBlock.LAYERS, 5);
+		var shape = s5.getShape(h.getLevel(),
+			net.minecraft.core.BlockPos.ZERO,
+			net.minecraft.world.phys.shapes.CollisionContext.empty());
+		h.assertTrue(Math.abs(shape.max(Direction.Axis.Y) - 5.0 / 16.0) < 1e-6,
+			"half layer height not 5px: " + shape.max(Direction.Axis.Y));
+		BlockState s8 = p.defaultBlockState()
+			.setValue(net.createcontour.block.ContourHalfLayerBlock.LAYERS, 8);
+		var shape8 = s8.getShape(h.getLevel(),
+			net.minecraft.core.BlockPos.ZERO,
+			net.minecraft.world.phys.shapes.CollisionContext.empty());
+		h.assertTrue(Math.abs(shape8.max(Direction.Axis.Y) - 0.5) < 1e-6,
+			"half layer max not half block");
+		h.succeed();
+	}
+
+	@GameTest(template = "test_empty")
+	public void ironVariantsRedstoneOnly(GameTestHelper h) throws Exception {
+		var m = ContourDoorBlock.class.getDeclaredMethod("canManualOpen");
+		m.setAccessible(true);
+		h.assertTrue((Boolean) m.invoke(ContourRegistries.CONTOUR_DOOR.get()),
+			"wooden door lost manual open");
+		h.assertTrue(!(Boolean) m.invoke(ContourRegistries.CONTOUR_IRON_DOOR.get()),
+			"iron door manually openable");
+		var mt = ContourTrapdoorBlock.class.getDeclaredMethod("canManualOpen");
+		mt.setAccessible(true);
+		h.assertTrue((Boolean) mt.invoke(ContourRegistries.CONTOUR_TRAPDOOR.get()),
+			"wooden trapdoor lost manual open");
+		h.assertTrue(!(Boolean) mt.invoke(
+				ContourRegistries.CONTOUR_IRON_TRAPDOOR.get()),
+			"iron trapdoor manually openable");
+		// redstone path untouched: states still carry OPEN (+ POWERED on door)
+		h.assertTrue(ContourRegistries.CONTOUR_IRON_DOOR.get().defaultBlockState()
+			.hasProperty(net.minecraft.world.level.block.state.properties
+				.BlockStateProperties.OPEN), "iron door missing OPEN");
+		h.assertTrue(ContourRegistries.CONTOUR_IRON_DOOR.get().defaultBlockState()
+			.hasProperty(net.minecraft.world.level.block.state.properties
+				.BlockStateProperties.POWERED), "iron door missing POWERED");
+		h.succeed();
+	}
+
+	@GameTest(template = "test_empty")
+	public void layerStackMerge(GameTestHelper h) {
+		// re-click on an existing plate grows one step (snow-style) - the
+		// ctx must HOLD the shape item or the place context retargets to
+		// the adjacent cell (canBeReplaced rejects foreign stacks)
+		Block p = ContourRegistries.CONTOUR_LAYERS.get();
+		h.setBlock(P, p.defaultBlockState()
+			.setValue(net.createcontour.block.ContourLayersBlock.LAYERS, 4));
+		BlockState grown = p.getStateForPlacement(
+			new BlockPlaceContext(h.getLevel(), null, InteractionHand.MAIN_HAND,
+				new ItemStack(ContourRegistries.CONTOUR_LAYERS_ITEM.get()),
+				new BlockHitResult(Vec3.atCenterOf(h.absolutePos(P)),
+					Direction.UP, h.absolutePos(P), false)));
+		h.assertTrue(grown.getValue(
+			net.createcontour.block.ContourLayersBlock.LAYERS) == 5,
+			"layer stack did not grow: " + grown);
+		// cap: a full plate stays full
+		h.setBlock(P, p.defaultBlockState()
+			.setValue(net.createcontour.block.ContourLayersBlock.LAYERS, 8));
+		BlockState cap = p.getStateForPlacement(
+			new BlockPlaceContext(h.getLevel(), null, InteractionHand.MAIN_HAND,
+				new ItemStack(ContourRegistries.CONTOUR_LAYERS_ITEM.get()),
+				new BlockHitResult(Vec3.atCenterOf(h.absolutePos(P)),
+					Direction.UP, h.absolutePos(P), false)));
+		h.assertTrue(cap.getValue(
+			net.createcontour.block.ContourLayersBlock.LAYERS) == 8,
+			"layer stack overfilled: " + cap);
+		// slice growth keeps its facing
+		Block sl = ContourRegistries.CONTOUR_SLICE.get();
+		h.setBlock(P, sl.defaultBlockState()
+			.setValue(net.createcontour.block.ContourSliceBlock.FACING, Direction.UP)
+			.setValue(net.createcontour.block.ContourSliceBlock.LAYERS, 2));
+		BlockState sg = sl.getStateForPlacement(
+			new BlockPlaceContext(h.getLevel(), null, InteractionHand.MAIN_HAND,
+				new ItemStack(ContourRegistries.CONTOUR_SLICE_ITEM.get()),
+				new BlockHitResult(Vec3.atCenterOf(h.absolutePos(P)),
+					Direction.UP, h.absolutePos(P), false)));
+		h.assertTrue(sg.getValue(
+				net.createcontour.block.ContourSliceBlock.LAYERS) == 3
+			&& sg.getValue(net.createcontour.block.ContourSliceBlock.FACING)
+				== Direction.UP,
+			"slice stack lost facing: " + sg);
+		// canBeReplaced: same item + room -> merge target; full -> no
+		ItemStack held = new ItemStack(ContourRegistries.CONTOUR_LAYERS_ITEM.get());
+		var ctxR = new BlockPlaceContext(h.getLevel(), null,
+			InteractionHand.MAIN_HAND, held,
+			new BlockHitResult(Vec3.atCenterOf(h.absolutePos(P)),
+				Direction.UP, h.absolutePos(P), false));
+		h.setBlock(P, p.defaultBlockState()
+			.setValue(net.createcontour.block.ContourLayersBlock.LAYERS, 4));
+		h.assertTrue(h.getLevel().getBlockState(h.absolutePos(P))
+				.canBeReplaced(ctxR),
+			"layers merge rejected with room");
+		h.setBlock(P, p.defaultBlockState()
+			.setValue(net.createcontour.block.ContourLayersBlock.LAYERS, 8));
+		h.assertTrue(!h.getLevel().getBlockState(h.absolutePos(P))
+				.canBeReplaced(ctxR),
+			"layers merge accepted at cap");
+		h.succeed();
+	}
+
+	@GameTest(template = "test_empty")
+	public void slidingDoorLeaf(GameTestHelper h) {
+		// closed: full-width plate on the facing plane, same as hinged
+		Block p = ContourRegistries.CONTOUR_SLIDING_DOOR.get();
+		BlockState closed = p.defaultBlockState()
+			.setValue(net.createcontour.block.ContourDoorBlock.FACING,
+				Direction.NORTH)
+			.setValue(net.createcontour.block.ContourDoorBlock.HINGE,
+				net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT)
+			.setValue(net.createcontour.block.ContourDoorBlock.OPEN, false);
+		var c = net.createcontour.block.ContourSlidingDoorBlock.boxesFor(closed);
+		h.assertTrue(c.size() == 1 && c.get(0)[3] == 16f && c.get(0)[5] == 3f,
+			"sliding door closed plate wrong");
+		// open: leaf slid to the hinge-side half, still on the facing
+		// plane (ADR-015 state toggle, not a swept move)
+		BlockState open = closed.setValue(
+			net.createcontour.block.ContourDoorBlock.OPEN, true);
+		var o = net.createcontour.block.ContourSlidingDoorBlock.boxesFor(open);
+		h.assertTrue(o.size() == 1
+				&& o.get(0)[3] - o.get(0)[0] == 8f && o.get(0)[5] == 3f,
+			"sliding door open leaf not in pocket half: "
+				+ java.util.Arrays.toString(o.get(0)));
+		// ledger/pairing identical to hinged: same properties present
+		h.assertTrue(open.hasProperty(net.minecraft.world.level.block.state
+				.properties.BlockStateProperties.DOUBLE_BLOCK_HALF)
+			&& open.hasProperty(net.minecraft.world.level.block.state
+				.properties.BlockStateProperties.POWERED),
+			"sliding door lost door properties");
+		h.succeed();
+	}
+
+	@GameTest(template = "test_empty")
+	public void foldingDoorLeaf(GameTestHelper h) {
+		Block p = ContourRegistries.CONTOUR_FOLDING_DOOR.get();
+		BlockState closed = p.defaultBlockState()
+			.setValue(net.createcontour.block.ContourDoorBlock.FACING,
+				Direction.NORTH)
+			.setValue(net.createcontour.block.ContourDoorBlock.HINGE,
+				net.minecraft.world.level.block.state.properties.DoorHingeSide.LEFT)
+			.setValue(net.createcontour.block.ContourDoorBlock.OPEN, false);
+		var c = net.createcontour.block.ContourFoldingDoorBlock.boxesFor(closed);
+		h.assertTrue(c.size() == 1 && c.get(0)[3] == 16f && c.get(0)[5] == 3f,
+			"folding door closed plate wrong");
+		// open: folded stack = half span AND doubled thickness on the
+		// facing plane (distinct from sliding's half-span single-thick)
+		var o = net.createcontour.block.ContourFoldingDoorBlock.boxesFor(
+			closed.setValue(net.createcontour.block.ContourDoorBlock.OPEN, true));
+		h.assertTrue(o.size() == 1
+				&& o.get(0)[3] - o.get(0)[0] == 8f
+				&& o.get(0)[5] - o.get(0)[2] == 6f,
+			"folding door open stack wrong: "
+				+ java.util.Arrays.toString(o.get(0)));
+		h.succeed();
+	}
+
+	@GameTest(template = "test_empty")
+	public void catwalkGrate(GameTestHelper h) {
+		Block p = ContourRegistries.CONTOUR_CATWALK.get();
+		var x = net.createcontour.block.ContourCatwalkBlock.boxesFor(
+			p.defaultBlockState());
+		h.assertTrue(x.size() == 3, "catwalk not sheet+2 rails: " + x.size());
+		float[] sheet = x.get(0), r1 = x.get(1), r2 = x.get(2);
+		h.assertTrue(sheet[1] == 0f && sheet[4] == 1f,
+			"catwalk sheet not 1px");
+		h.assertTrue(r1[4] == 8f && r1[0] == 0f && r2[0] == 15f,
+			"catwalk X rails wrong");
+		var z = net.createcontour.block.ContourCatwalkBlock.boxesFor(
+			p.defaultBlockState().setValue(
+				net.createcontour.block.ContourCatwalkBlock.AXIS,
+				Direction.Axis.Z));
+		h.assertTrue(z.get(1)[2] == 0f && z.get(1)[5] == 1f
+				&& z.get(2)[2] == 15f,
+			"catwalk Z rails wrong");
 		h.succeed();
 	}
 }

@@ -82,35 +82,6 @@ public class ContourSlabBlock extends ContourBlock {
 	}
 
 	/**
-	 * Merge requires same paint: the incoming material follows the full
-	 * precedence (stored payload > offhand > neutral). Blank-held merges
-	 * only onto an unpainted host; any material mismatch rejects so the
-	 * click falls through to normal adjacent placement.
-	 */
-	/** "Same paint" = same FULL BlockState (block + every property). */
-	static boolean sameFullState(BlockState a, BlockState b) {
-		return a != null && b != null && a.getBlock() == b.getBlock()
-			&& a.getValues().equals(b.getValues());
-	}
-
-	private boolean sameMaterial(BlockPlaceContext ctx, BlockPos pos) {
-		BlockState incoming = incomingMaterial(ctx);
-		if (ctx.getLevel().getBlockEntity(pos) instanceof ContourBlockEntity be) {
-			if (be.isFrozen())
-				return false; // frozen future payloads never merge
-			BlockState target = be.getMaterial();
-			if (incoming == null)
-				return MaterialSafety.isNeutral(target);
-			return sameFullState(target, incoming);
-		}
-		return incoming == null;
-	}
-
-	public static BlockState incomingMaterial(BlockPlaceContext ctx) {
-		return ContourBlockItem.resolveIncoming(ctx, ctx.getItemInHand(), ctx.getPlayer());
-	}
-
-	/**
 	 * Merge eligibility: same item + not already double + same FULL paint.
 	 * Any paint mismatch returns false so placement falls through to the
 	 * normal adjacent cell instead of hard-failing on the clicked pos.

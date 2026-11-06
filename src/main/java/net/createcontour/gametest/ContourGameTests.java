@@ -73,7 +73,7 @@ public class ContourGameTests {
 		h.assertTrue(BuiltInRegistries.BLOCK
 			.getTag(net.minecraft.tags.TagKey.create(Registries.BLOCK,
 				ResourceLocation.fromNamespaceAndPath("create_contour", "contour_shapes")))
-			.map(t -> t.size() == 106).orElse(false), "contour_shapes tag missing members");
+			.map(t -> t.size() == 114).orElse(false), "contour_shapes tag missing members");
 		h.succeed();
 	}
 

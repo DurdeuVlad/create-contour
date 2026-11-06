@@ -227,7 +227,10 @@ public class ContourBlockItem extends BlockItem {
 		Direction mergeFacing = null;
 		boolean mergeTop = false;
 		boolean mergeFrozen = false;
-		if (beforeState.getBlock() instanceof net.createcontour.block.ContourSlabBlock
+		if ((beforeState.getBlock() instanceof net.createcontour.block.ContourSlabBlock
+			|| beforeState.getBlock() instanceof net.createcontour.block.ContourLayersBlock
+			|| beforeState.getBlock() instanceof net.createcontour.block.ContourHalfLayerBlock
+			|| beforeState.getBlock() instanceof net.createcontour.block.ContourSliceBlock)
 			&& beforeBe instanceof ContourBlockEntity mbe) {
 			mergeMaterial = mbe.getMaterial();
 			mergeFacing = mbe.getFacing();
@@ -292,11 +295,10 @@ public class ContourBlockItem extends BlockItem {
 			? parseFacing(payloadTag(frameSnapshot)) : cbe.getFacing();
 		BlockState placed = level.getBlockState(placePos);
 
-		if (merge && placed.getBlock() instanceof net.createcontour.block.ContourSlabBlock
-			&& placed.getValue(net.createcontour.block.ContourSlabBlock.TYPE)
-				== net.minecraft.world.level.block.state.properties.SlabType.DOUBLE) {
-			// Same-paint merge: rebuild owned state from the PRE-MUTATION
-			// snapshot (never the post-super imported BE data) + incoming paid.
+		if (merge && placed.getBlock() == beforeState.getBlock()) {
+			// Same-block merge (slab->double, layers/slice +1): rebuild
+			// owned state from the PRE-MUTATION snapshot (never the
+			// post-super imported BE data) + incoming paid.
 			int incomingPaid = paidTransfer ? 1 : res != null ? res.totalCount() : 0;
 			cbe.applyPayload(mergeMaterial, mergePaid + incomingPaid,
 				mergeFacing, mergeTop);

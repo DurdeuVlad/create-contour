@@ -1,0 +1,388 @@
+{
+  "variants": {
+    "facing=north,half=lower,hinge=left,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=lower,hinge=left,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=lower,hinge=left,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=lower,hinge=left,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=lower,hinge=left,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=lower,hinge=left,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=lower,hinge=left,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=lower,hinge=left,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=lower,hinge=right,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=lower,hinge=right,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=lower,hinge=right,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=lower,hinge=right,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=lower,hinge=right,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=lower,hinge=right,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=lower,hinge=right,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=lower,hinge=right,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=left,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=left,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=left,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=left,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=left,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=left,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=left,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=left,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=right,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=right,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=right,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=right,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=right,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=right,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=right,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=north,half=upper,hinge=right,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=left,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=left,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=left,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=left,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=left,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=left,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=left,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=left,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=right,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=right,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=right,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=right,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=right,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=right,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=right,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=lower,hinge=right,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=left,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=left,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=left,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=left,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=left,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=left,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=left,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=left,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=right,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=right,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=right,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=right,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=right,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=right,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=right,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=south,half=upper,hinge=right,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=left,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=left,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=left,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=left,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=left,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=left,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=left,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=left,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=right,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=right,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=right,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=right,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=right,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=right,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=right,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=lower,hinge=right,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=left,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=left,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=left,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=left,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=left,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=left,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=left,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=left,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=right,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=right,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=right,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=right,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=right,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=right,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=right,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=east,half=upper,hinge=right,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=left,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=left,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=left,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=left,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=left,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=left,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=left,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=left,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=right,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=right,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=right,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=right,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=right,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=right,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=right,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=lower,hinge=right,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=left,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=left,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=left,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=left,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=left,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=left,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=left,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=left,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=right,open=false,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=right,open=false,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=right,open=false,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=right,open=false,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=right,open=true,powered=false,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=right,open=true,powered=false,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=right,open=true,powered=true,waterlogged=false": {
+      "model": "create_contour:block/contour_folding_door"
+    },
+    "facing=west,half=upper,hinge=right,open=true,powered=true,waterlogged=true": {
+      "model": "create_contour:block/contour_folding_door"
+    }
+  }
+}

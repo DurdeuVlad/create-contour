@@ -320,6 +320,66 @@ until the owner approves them.
   Contour Placer consumes `contour_blank` feedstock and returns
   feedstock + material on swoop.
 
+## ADR-015: Sliding-door motion is a state toggle, never a sweep
+
+- Context: issue-13 family B (sliding/folding doors) needs a motion
+  contract before code. Two options were weighed: physically swept
+  motion (a moving contraption or per-tick animated sub-block) vs an
+  instant OPEN/CLOSED state swap whose leaf renders translated along
+  the frame.
+- Decision: sliding and folding doors are state toggles. OPEN and
+  CLOSED are distinct baked states whose `boxesFor` geometry places
+  the leaf along the track/pocket instead of across the opening, and
+  the swap is instantaneous - exactly how the hinged door already
+  swaps its leaf onto the hinge side. No per-tick animation, no
+  moving block entity, no intermediate collision states.
+- Rationale: every openable in the catalog already toggles
+  instantaneously, so pathing, redstone edge semantics, ledger and
+  payload rules, drops, rotate/mirror and schematic transforms are
+  inherited unchanged. A physically swept variant would need an
+  entirely new BE/motion architecture for no builder-visible gain at
+  block scale; sliding doorways read as "leaf in the pocket" either
+  way between two clicks.
+- Consequences: `contour_sliding_door` subclasses the hinged door
+  and differs only in `boxesFor` (open leaf slides along the wall
+  plane instead of pivoting); `contour_folding_door` follows the same
+  contract stacking the leaf against the jamb. Issue-13 family B
+  acceptance contract: ledger identical to hinged door, canonical-
+  segment drops, same interactive test suite.
+- Folding remains optional under the same contract; sliding ships
+  first.
+
+## ADR-016: Multipart occupancy is slot-based, not free geometry
+
+- Context: issue-13 family A (true multipart panels) needs an
+  occupancy model. Options: free-form occupant boxes with arbitrary
+  overlap tests vs a fixed slot grid whose cells either merge or
+  reject.
+- Decision: occupants live on a fixed slot grid - the 24 byte-panel
+  slots (6 faces x 4 quadrants). Panel-family members declare a slot
+  footprint: `byte_panel` = 1 slot, `half_panel` = the 2 adjacent
+  slots on its face half, `panel` = all 4 on its face, `flat_pane`
+  = a full-face sheet that rejects all other slots on that face.
+  A new occupant is accepted iff its slot set is disjoint from all
+  existing occupants'. Everything else (non-panel shapes, full
+  blocks) remains strictly one-occupant-per-cell.
+- Representation: `ContourMultipartBlock` + `ContourMultipartBlockEntity`
+  carrying an occupant list (slot id, panel kind, material,
+  paidUnits) instead of blockstate combinations - 24^N states are
+  not representable. The blockstate carries WATERLOGGED only.
+  Placement raycasts into the cell to resolve the clicked
+  face+quadrant; conflicts reject and fall through to the adjacent
+  cell like every other merge. Wrench hits the targeted occupant.
+- Ledger/drops: each occupant keeps its own paidUnits; breaking
+  drops one blank host per occupant + summed material via the same
+  `ledgerDrops` path. Schematic serializes the occupant list through
+  the existing writeSafe/read NBT contract.
+- Consequences: this closes the "boards/box" parity semantics - any
+  combination of panel-family plates in one cell - without a new
+  render architecture (the model emits one box per occupied slot
+  through the existing ContourBoxModel path via BE model data).
+  Catwalk and all non-panel shapes stay single-occupant.
+
 ## Open decisions (tracked, not resolved)
 
 | ID | Question | Where resolved |

@@ -276,6 +276,37 @@ public final class ContourClient {
 		(o, s, m) -> new ContourBoxModel(o, s, m,
 			net.createcontour.block.ContourFlatPaneBlock::boxesFor,
 			ContourRegistries.CONTOUR_FLAT_PANE);
+	private static final ModelFactory CORNER_SLICE =
+		(o, s, m) -> new ContourBoxModel(o, s, m,
+			net.createcontour.block.ContourCornerSliceBlock::boxesFor,
+			ContourRegistries.CONTOUR_CORNER_SLICE);
+	private static final ModelFactory BYTE_PANEL =
+		(o, s, m) -> new ContourBoxModel(o, s, m,
+			net.createcontour.block.ContourBytePanelBlock::boxesFor,
+			ContourRegistries.CONTOUR_BYTE_PANEL);
+	private static final ModelFactory HALF_LAYER =
+		(o, s, m) -> new ContourLayersModel(o, s, m, 1f,
+			() -> ContourRegistries.CONTOUR_HALF_LAYER.get(), true);
+	private static final ModelFactory SLIDING_DOOR =
+		(o, s, m) -> new ContourBoxModel(o, s, m,
+			net.createcontour.block.ContourSlidingDoorBlock::boxesFor,
+			ContourRegistries.CONTOUR_SLIDING_DOOR);
+	private static final ModelFactory FOLDING_DOOR =
+		(o, s, m) -> new ContourBoxModel(o, s, m,
+			net.createcontour.block.ContourFoldingDoorBlock::boxesFor,
+			ContourRegistries.CONTOUR_FOLDING_DOOR);
+	private static final ModelFactory CATWALK =
+		(o, s, m) -> new ContourBoxModel(o, s, m,
+			net.createcontour.block.ContourCatwalkBlock::boxesFor,
+			ContourRegistries.CONTOUR_CATWALK);
+	private static final ModelFactory IRON_DOOR =
+		(o, s, m) -> new ContourBoxModel(o, s, m,
+			net.createcontour.block.ContourDoorBlock::boxesFor,
+			ContourRegistries.CONTOUR_IRON_DOOR);
+	private static final ModelFactory IRON_TRAPDOOR =
+		(o, s, m) -> new ContourBoxModel(o, s, m,
+			net.createcontour.block.ContourTrapdoorBlock::boxesFor,
+			ContourRegistries.CONTOUR_IRON_TRAPDOOR);
 	private static final ModelFactory TRAPDOOR =
 		(o, s, m) -> new ContourBoxModel(o, s, m,
 			net.createcontour.block.ContourTrapdoorBlock::boxesFor,
@@ -564,6 +595,22 @@ public final class ContourClient {
 			ContourRegistries.CONTOUR_HALF_PANEL_ITEM.get());
 		wrapBlock(event, ContourRegistries.CONTOUR_FLAT_PANE.get(), FLAT_PANE,
 			ContourRegistries.CONTOUR_FLAT_PANE_ITEM.get());
+		wrapBlock(event, ContourRegistries.CONTOUR_CORNER_SLICE.get(), CORNER_SLICE,
+			ContourRegistries.CONTOUR_CORNER_SLICE_ITEM.get());
+		wrapBlock(event, ContourRegistries.CONTOUR_BYTE_PANEL.get(), BYTE_PANEL,
+			ContourRegistries.CONTOUR_BYTE_PANEL_ITEM.get());
+		wrapBlock(event, ContourRegistries.CONTOUR_HALF_LAYER.get(), HALF_LAYER,
+			ContourRegistries.CONTOUR_HALF_LAYER_ITEM.get());
+		wrapBlock(event, ContourRegistries.CONTOUR_IRON_DOOR.get(), IRON_DOOR,
+			ContourRegistries.CONTOUR_IRON_DOOR_ITEM.get());
+		wrapBlock(event, ContourRegistries.CONTOUR_IRON_TRAPDOOR.get(), IRON_TRAPDOOR,
+			ContourRegistries.CONTOUR_IRON_TRAPDOOR_ITEM.get());
+		wrapBlock(event, ContourRegistries.CONTOUR_SLIDING_DOOR.get(), SLIDING_DOOR,
+			ContourRegistries.CONTOUR_SLIDING_DOOR_ITEM.get());
+		wrapBlock(event, ContourRegistries.CONTOUR_FOLDING_DOOR.get(), FOLDING_DOOR,
+			ContourRegistries.CONTOUR_FOLDING_DOOR_ITEM.get());
+		wrapBlock(event, ContourRegistries.CONTOUR_CATWALK.get(), CATWALK,
+			ContourRegistries.CONTOUR_CATWALK_ITEM.get());
 		wrapBlock(event, ContourRegistries.CONTOUR_PYRAMID.get(),
 			ContourPyramidModel::new,
 			ContourRegistries.CONTOUR_PYRAMID_ITEM.get());
@@ -930,7 +977,15 @@ public final class ContourClient {
 			ContourRegistries.CONTOUR_VERTICAL_STEP.get(),
 			ContourRegistries.CONTOUR_BEAM.get(),
 			ContourRegistries.CONTOUR_HALF_PANEL.get(),
-			ContourRegistries.CONTOUR_FLAT_PANE.get()};
+			ContourRegistries.CONTOUR_FLAT_PANE.get(),
+			ContourRegistries.CONTOUR_CORNER_SLICE.get(),
+			ContourRegistries.CONTOUR_BYTE_PANEL.get(),
+			ContourRegistries.CONTOUR_HALF_LAYER.get(),
+			ContourRegistries.CONTOUR_IRON_DOOR.get(),
+			ContourRegistries.CONTOUR_IRON_TRAPDOOR.get(),
+			ContourRegistries.CONTOUR_SLIDING_DOOR.get(),
+			ContourRegistries.CONTOUR_FOLDING_DOOR.get(),
+			ContourRegistries.CONTOUR_CATWALK.get()};
 		// platform: sized to the catalog so every row lands on stone
 		int sceneRows = (shapes.length + 10) / 11;
 		for (int x = 0; x < 33; x++)
@@ -1156,7 +1211,15 @@ public final class ContourClient {
 				ContourRegistries.CONTOUR_VERTICAL_STEP.get(),
 				ContourRegistries.CONTOUR_BEAM.get(),
 				ContourRegistries.CONTOUR_HALF_PANEL.get(),
-				ContourRegistries.CONTOUR_FLAT_PANE.get()};
+				ContourRegistries.CONTOUR_FLAT_PANE.get(),
+				ContourRegistries.CONTOUR_CORNER_SLICE.get(),
+				ContourRegistries.CONTOUR_BYTE_PANEL.get(),
+				ContourRegistries.CONTOUR_HALF_LAYER.get(),
+				ContourRegistries.CONTOUR_IRON_DOOR.get(),
+				ContourRegistries.CONTOUR_IRON_TRAPDOOR.get(),
+				ContourRegistries.CONTOUR_SLIDING_DOOR.get(),
+				ContourRegistries.CONTOUR_FOLDING_DOOR.get(),
+				ContourRegistries.CONTOUR_CATWALK.get()};
 			for (Block block : blocks) {
 				for (BlockState state : block.getStateDefinition().getPossibleStates()) {
 					BakedModel m = mc.getBlockRenderer().getBlockModel(state);

@@ -117,5 +117,13 @@
   "block.create_contour.contour_vertical_step": "Contour Vertical Step",
   "block.create_contour.contour_beam": "Contour Beam",
   "block.create_contour.contour_half_panel": "Contour Half Panel",
-  "block.create_contour.contour_flat_pane": "Contour Flat Pane"
+  "block.create_contour.contour_flat_pane": "Contour Flat Pane",
+  "block.create_contour.contour_corner_slice": "Contour Corner Slice",
+  "block.create_contour.contour_byte_panel": "Contour Byte Panel",
+  "block.create_contour.contour_half_layer": "Contour Half Layer",
+  "block.create_contour.contour_iron_door": "Contour Iron Door",
+  "block.create_contour.contour_iron_trapdoor": "Contour Iron Trapdoor",
+  "block.create_contour.contour_sliding_door": "Contour Sliding Door",
+  "block.create_contour.contour_folding_door": "Contour Folding Door",
+  "block.create_contour.contour_catwalk": "Contour Catwalk"
 }

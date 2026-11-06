@@ -72,6 +72,12 @@ public class ContourSliceBlock extends ContourBlock {
 
 	@Override
 	public BlockState getStateForPlacement(BlockPlaceContext ctx) {
+		// Stacking QoL: clicking an existing slice grows it one step
+		// (snow-style) along its own facing instead of re-deriving.
+		BlockState existing = ctx.getLevel().getBlockState(ctx.getClickedPos());
+		if (existing.is(this))
+			return withWater(existing.setValue(LAYERS,
+				Math.min(8, existing.getValue(LAYERS) + 1)), ctx);
 		// Click depth along the face normal is always the cell boundary,
 		// so thickness comes from sneak (thin) vs normal (half); the
 		// wrench fine-tunes afterward.
@@ -79,6 +85,17 @@ public class ContourSliceBlock extends ContourBlock {
 		return withWater(defaultBlockState()
 			.setValue(FACING, ctx.getClickedFace().getOpposite())
 			.setValue(LAYERS, layers), ctx);
+	}
+
+	/**
+	 * Merge eligibility: same item + room to grow + same FULL paint.
+	 * Paint mismatches fall through to the adjacent cell like the slab.
+	 */
+	@Override
+	public boolean canBeReplaced(BlockState state, BlockPlaceContext ctx) {
+		return state.getValue(LAYERS) < 8
+			&& ctx.getItemInHand().is(asItem())
+			&& sameMaterial(ctx, ctx.getClickedPos());
 	}
 
 	@Override

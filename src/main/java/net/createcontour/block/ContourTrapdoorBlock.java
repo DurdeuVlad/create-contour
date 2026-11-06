@@ -101,12 +101,19 @@ public class ContourTrapdoorBlock extends ContourBlock {
 		var r = super.useItemOn(stack, state, level, pos, player, hand, hit);
 		if (r != net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION)
 			return r;
+		if (!canManualOpen())
+			return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		if (level.isClientSide)
 			return net.minecraft.world.ItemInteractionResult.SUCCESS;
 		state = state.cycle(OPEN);
 		level.setBlock(pos, state, Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
 		level.levelEvent(player, state.getValue(OPEN) ? 1007 : 1013, pos, 0);
 		return net.minecraft.world.ItemInteractionResult.CONSUME;
+	}
+
+	/** Wooden trapdoors respond to hands; the iron variant is redstone-only. */
+	protected boolean canManualOpen() {
+		return true;
 	}
 
 	@Override

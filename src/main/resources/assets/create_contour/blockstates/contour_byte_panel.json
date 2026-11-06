@@ -1,0 +1,148 @@
+{
+  "variants": {
+    "facing=down,quadrant=0,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=down,quadrant=0,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=down,quadrant=1,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=down,quadrant=1,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=down,quadrant=2,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=down,quadrant=2,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=down,quadrant=3,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=down,quadrant=3,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=up,quadrant=0,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=up,quadrant=0,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=up,quadrant=1,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=up,quadrant=1,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=up,quadrant=2,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=up,quadrant=2,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=up,quadrant=3,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=up,quadrant=3,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=north,quadrant=0,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=north,quadrant=0,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=north,quadrant=1,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=north,quadrant=1,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=north,quadrant=2,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=north,quadrant=2,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=north,quadrant=3,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=north,quadrant=3,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=south,quadrant=0,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=south,quadrant=0,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=south,quadrant=1,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=south,quadrant=1,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=south,quadrant=2,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=south,quadrant=2,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=south,quadrant=3,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=south,quadrant=3,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=east,quadrant=0,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=east,quadrant=0,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=east,quadrant=1,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=east,quadrant=1,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=east,quadrant=2,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=east,quadrant=2,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=east,quadrant=3,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=east,quadrant=3,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=west,quadrant=0,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=west,quadrant=0,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=west,quadrant=1,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=west,quadrant=1,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=west,quadrant=2,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=west,quadrant=2,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=west,quadrant=3,waterlogged=false": {
+      "model": "create_contour:block/contour_byte_panel"
+    },
+    "facing=west,quadrant=3,waterlogged=true": {
+      "model": "create_contour:block/contour_byte_panel"
+    }
+  }
+}

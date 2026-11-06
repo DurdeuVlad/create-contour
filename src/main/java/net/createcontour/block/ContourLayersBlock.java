@@ -51,10 +51,27 @@ public class ContourLayersBlock extends ContourBlock {
 
 	@Override
 	public BlockState getStateForPlacement(BlockPlaceContext ctx) {
+		// Stacking QoL: clicking an existing layer plate grows it one
+		// step (snow-style) instead of re-deriving thickness.
+		BlockState existing = ctx.getLevel().getBlockState(ctx.getClickedPos());
+		if (existing.is(this))
+			return withWater(existing.setValue(LAYERS,
+				Math.min(8, existing.getValue(LAYERS) + 1)), ctx);
 		double fy = ctx.getClickLocation().y - ctx.getClickedPos().getY();
 		int layers = ctx.getClickedFace() == net.minecraft.core.Direction.UP ? 8
 			: Mth.clamp((int) Math.ceil(fy * 8), 1, 8);
 		return withWater(defaultBlockState().setValue(LAYERS, layers), ctx);
+	}
+
+	/**
+	 * Merge eligibility: same item + room to grow + same FULL paint.
+	 * Paint mismatches fall through to the adjacent cell like the slab.
+	 */
+	@Override
+	public boolean canBeReplaced(BlockState state, BlockPlaceContext ctx) {
+		return state.getValue(LAYERS) < 8
+			&& ctx.getItemInHand().is(asItem())
+			&& sameMaterial(ctx, ctx.getClickedPos());
 	}
 
 	@Override
