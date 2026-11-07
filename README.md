@@ -1,9 +1,10 @@
 # Create: Contour
 
 A NeoForge addon for [Create](https://github.com/Creators-of-Create/Create) that
-adds copycat-style shape blocks - slabs, vertical slabs, stairs, and more - that
-can be painted with the material of another block, with low-click workflows
-designed for decorating trains and contraptions.
+adds 114 Create-native shape blocks that copy the material of any block you
+paint them with - slabs, stairs, panels, slopes, doors, sliding and folding
+doors, catwalks and more - with the Contour Placer, Codex, and low-click
+workflows designed for decorating trains and contraptions.
 
 - Display name: **Create: Contour**
 - Mod id: `create_contour`
@@ -12,40 +13,16 @@ designed for decorating trains and contraptions.
 
 ## Status
 
-**Private experimental prototype: slab, vertical slab, and stairs are
-implemented.** Shared material/accounting/persistence/wrench and client
-paths have executed development tests. This is not a completed
-first-three end-to-end gate and is NOT cleared for production worlds or
-Rustic Craft 2 installation.
+**Alpha `0.2.0`**: 114 shapes and all requested QoL systems are implemented
+and verified — `runGameTestServer` 144/144, `runClientQA` render smoke
+318,503 checks / 0 failed. Released as a GitHub prerelease
+(`v0.2.0-alpha`); CurseForge publishing is prepared in
+[docs/publishing/curseforge-page.md](docs/publishing/curseforge-page.md).
 
-Verified facts (exact evidence in `docs/evidence/manifest.md`):
-
-- 23/23 GameTests on the official NeoForge GameTest server, including four
-  accounting regressions and noncolliding visual material acceptance
-  (`docs/evidence/logs/gametest-leaf-green.log`).
-- 4 headless logic/math JUnit tests per build profile (pack + legacy).
-- 4292/4292 client model assertions in the dev-client render smoke
-  (`docs/evidence/logs/runclient-qa-leaf.log`) - NOT 4292 features.
-- Native live paint + aux light proven on all three shapes by actual
-  right-click in the QA world; painted item icons, material matrix and
-  F3+T resource reload all pass on the minimal profile client.
-- Both build profiles produce jars (`build/libs/pack/`,
-  `build/libs/legacy/`).
-
-Not implemented: Ponder onboarding scenes and future-version drop capsules
-(frozen pickup is refused by design). Strict RC2 client baseline is BLOCKED
-by CustomSkinLoader before Contour; diagnostic addon loading/join is PARTIAL,
-not a compatibility pass. NOT RUN: pack gameplay acceptance,
-trains/contraptions, schematicannon, two-client synchronization, CTM neighbor
-connectivity, JEI-on recipe visibility and the full native survival break/drop
-cycle. Pack diagnostics exposed collision-based leaf rejection; the validator
-now uses selection outline, with a reproduced red/green regression.
-Fixed-jar pack re-verification is pending. See
-`docs/evidence/Pack-Diagnostic-Assessment.md` and the evidence manifest.
-
-- Visibility: private local repository, single owner. Publication is undecided.
-- No commits, tags, remotes, GitHub records, or publications without explicit
-  owner authorization (see [AGENTS.md](AGENTS.md)).
+Known roadmap gaps (documented, not bugs): true multipart plates and
+kinetic/fluid disguises - see
+[docs/issues/13-deferred-families.md](docs/issues/13-deferred-families.md)
+and ADR-015/016 in [docs/Decision.md](docs/Decision.md).
 
 ## Build targets and evidence
 
@@ -55,7 +32,7 @@ development-profile proof from the un-executed full-pack gate.
 
 | Profile | Declared composition | Status |
 | --- | --- | --- |
-| **Primary (pack)** - declared target: Rustic Craft 2 stable 2.2.2 pack profile | MC 1.21.1, NeoForge 21.1.248, Create 6.0.10 (jar manifest requires NF >= 21.1.219, Ponder >= 1.0.82; bundled Registrate +67, Flywheel 1.0.6, Ponder 1.0.82), JEI 19.57.0.449 optional | build + 4 logic tests PASS; minimal Create client+server proof PASS; **FULL RC2 NOT RUN** |
+| **Primary (pack)** - declared target: Rustic Craft 2 stable 2.2.2 pack profile | MC 1.21.1, NeoForge 21.1.248, Create 6.0.10 (jar manifest requires NF >= 21.1.219, Ponder >= 1.0.82; bundled Registrate +67, Flywheel 1.0.6, Ponder 1.0.82), JEI 19.57.0.449 optional | build PASS; 286-mod RC2 server `Done` boot PASS; client world join PASS; sustained TPS not measured |
 | **Legacy (prompt baseline)** | MC 1.21.1, NeoForge 21.1.213, Create 6.0.8-168, Ponder 1.0.66, Registrate +67 (requested +62; official Create 6.0.8 declares +67 - recorded deviation) | build + 4 logic tests PASS; legacy client AND server runtime NOT RUN |
 
 Windows commands (run from repo root):
@@ -113,17 +90,11 @@ of a deployed live server tuple.
 | [CHANGELOG.md](CHANGELOG.md) | Unreleased private prototype notes |
 | [AGENTS.md](AGENTS.md) | Operating rules: authority, clean room, evidence |
 
-## Shape roadmap (summary)
+## Shape catalog (summary)
 
-1. First three, gated: `slab`, `vertical_slab`, `stairs`.
-2. Next seven to ten total: `carriage_panel`, `platform_edge`, `rail_bed_trim`,
-   `beam`, `pillar`, `wall`, `pane`.
-3. Later families (backlog): fence, fence_gate, trapdoor, door, layers 1..8,
-   slopes, quarter-round.
-
-No shape beyond the first three may be implemented until the milestone M2
-proof gate passes. The gate is mandatory and two-part:
-[issue 13](docs/issues/13-pack-compatibility.md) proves compatibility on an
-isolated copy of the Rustic Craft 2 client and server pack runtime, and
-[issue 09](docs/issues/09-proof-gate.md) consumes that proof plus the
-multiplayer/save/render matrix.
+114 shipped forms: slabs, vertical slabs, stairs, walls, panes, slopes,
+layers (1-8), half-layers, slices, panels and byte-panels, frames, beams,
+pillars, catwalks, doors and trapdoors (normal + iron), sliding and folding
+doors, and more. Remaining families - multipart occupancy and kinetic/fluid
+disguises - are spec'd in
+[docs/issues/13-deferred-families.md](docs/issues/13-deferred-families.md).

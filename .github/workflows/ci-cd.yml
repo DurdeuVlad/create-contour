@@ -1,0 +1,72 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+jobs:
+  test:
+    name: Build + GameTest
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build
+        run: ./gradlew build
+      - name: GameTest server suite
+        run: ./gradlew runGameTestServer
+      - name: Upload built jars
+        uses: actions/upload-artifact@v4
+        with:
+          name: jars
+          path: build/libs/create_contour-*.jar
+
+  release:
+    name: GitHub release + CurseForge upload
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build
+        run: ./gradlew build
+      - name: Checksums
+        working-directory: build/libs
+        run: |
+          JAR=$(ls create_contour-*-alpha.jar 2>/dev/null || ls create_contour-*.jar | grep -v sources)
+          sha256sum "$JAR" > "$JAR.sha256"
+          sha512sum "$JAR" > "$JAR.sha512"
+      - name: GitHub prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/libs/create_contour-*.jar*
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}
+          generate_release_notes: true
+      - name: CurseForge upload
+        if: vars.CURSEFORGE_PROJECT_ID != ''
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          curseforge-token: ${{ secrets.CURSEFORGE_API_TOKEN }}
+          files: build/libs/create_contour-*-alpha.jar || build/libs/create_contour-*.jar
+          name: Create: Contour ${{ github.ref_name }}
+          version: ${{ github.ref_name }}
+          version-type: ${{ contains(github.ref_name, 'alpha') && 'alpha' || contains(github.ref_name, 'beta') && 'beta' || 'release' }}
+          loaders: neoforge
+          game-versions: 1.21.1
+          dependencies: create
+          changelog: auto

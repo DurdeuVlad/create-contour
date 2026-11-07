@@ -6,9 +6,15 @@ license = "MIT"
 modId = "create_contour"
 version = "${mod_version}"
 displayName = "Create: Contour"
-description = '''Copycat-style shape blocks for Create: slabs, vertical slabs,
-stairs and more, paintable with other blocks' materials.'''
-authors = "Create: Contour contributors"
+description = '''Create-native shape blocks for builders: 114 paintable forms -
+slabs, stairs, panels, slopes, doors, sliding and folding doors, catwalks and
+more - that copy any neighbor block's material. Includes the Contour Placer
+and Codex, wrench cycling, waterlogging, and schematic support.'''
+authors = "DurdeuVlad"
+logoFile = "logo.png"
+logoBlur = false
+displayURL = "https://github.com/DurdeuVlad/create-contour"
+issueTrackerURL = "https://github.com/DurdeuVlad/create-contour/issues"
 credits = "Built on Create by the Create team / Creators of Create (MIT code; Create assets are All Rights Reserved and not reused)."
 
 [[dependencies.create_contour]]
