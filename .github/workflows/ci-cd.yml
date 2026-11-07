@@ -56,16 +56,22 @@ jobs:
           files: build/libs/create_contour-*.jar*
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') }}
           generate_release_notes: true
+      - name: Compute release type
+        id: rt
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == *alpha* ]]; then echo "type=alpha" >> "$GITHUB_OUTPUT";
+          elif [[ "${GITHUB_REF_NAME}" == *beta* ]]; then echo "type=beta" >> "$GITHUB_OUTPUT";
+          else echo "type=release" >> "$GITHUB_OUTPUT"; fi
       - name: CurseForge upload
         if: vars.CURSEFORGE_PROJECT_ID != ''
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID }}
           curseforge-token: ${{ secrets.CURSEFORGE_API_TOKEN }}
-          files: build/libs/create_contour-*-alpha.jar || build/libs/create_contour-*.jar
-          name: Create: Contour ${{ github.ref_name }}
+          files: build/libs/create_contour-*-alpha.jar
+          name: 'Create: Contour ${{ github.ref_name }}'
           version: ${{ github.ref_name }}
-          version-type: ${{ contains(github.ref_name, 'alpha') && 'alpha' || contains(github.ref_name, 'beta') && 'beta' || 'release' }}
+          version-type: ${{ steps.rt.outputs.type }}
           loaders: neoforge
           game-versions: 1.21.1
           dependencies: create
