@@ -1109,4 +1109,235 @@ public class ContourGameTests {
 			"failed placement mutated frame payload");
 		h.succeed();
 	}
+
+	// --- issue #3: native repaint route (state.useItemOn, the call the
+	// server packet handler actually makes) ---
+
+	@GameTest(template = "test_empty")
+	public void repaintNativeRoute(GameTestHelper h) {
+		boolean wasConsume = ContourConfig.consumeMaterial();
+		try {
+			ContourConfig.CONSUME_MATERIAL.set(true);
+			Player p = player(h);
+			BlockState[] hosts = {
+				ContourRegistries.CONTOUR_BYTE.get().defaultBlockState(),
+				ContourRegistries.CONTOUR_SLAB.get().defaultBlockState(),
+				ContourRegistries.CONTOUR_PANEL.get().defaultBlockState() };
+			for (BlockState host : hosts) {
+				ContourBlockEntity be = be(h, host);
+				be.applyPayload(Blocks.DIRT.defaultBlockState(), 1,
+					Direction.NORTH, false);
+				ItemStack stone = new ItemStack(Items.STONE, 1);
+				p.getInventory().setItem(0, new ItemStack(Items.DIRT, 0));
+				p.setItemInHand(InteractionHand.MAIN_HAND, stone);
+				BlockState state = h.getBlockState(P);
+				var res = state.useItemOn(stone, h.getLevel(), p,
+					InteractionHand.MAIN_HAND, new BlockHitResult(
+						Vec3.atCenterOf(h.absolutePos(P)), Direction.UP,
+						h.absolutePos(P), false));
+				h.assertTrue(res.consumesAction(),
+					"repaint not consumed on " + state.getBlock());
+				ContourBlockEntity nbe = (ContourBlockEntity) h.getLevel()
+					.getBlockEntity(h.absolutePos(P));
+				h.assertTrue(nbe.getMaterial().getBlock() == Blocks.STONE
+					&& nbe.getPaidUnits() == 1,
+					"repaint left wrong material/ledger on " + state.getBlock());
+				h.assertTrue(p.getInventory().countItem(Items.STONE) == 0,
+					"stone was not consumed on " + state.getBlock());
+				h.assertTrue(p.getInventory().countItem(Items.DIRT) == 1,
+					"paid dirt not refunded on " + state.getBlock());
+				p.getInventory().clearContent();
+			}
+			// same-base repaint is free and uncharged
+			ContourBlockEntity be2 = be(h, ContourRegistries.CONTOUR_SLAB.get()
+				.defaultBlockState());
+			be2.applyPayload(Blocks.OAK_LOG.defaultBlockState(), 1,
+				Direction.NORTH, false);
+			ItemStack spruce = new ItemStack(Items.SPRUCE_LOG, 1);
+			p.setItemInHand(InteractionHand.MAIN_HAND, spruce);
+			var r2 = h.getBlockState(P).useItemOn(spruce, h.getLevel(), p,
+				InteractionHand.MAIN_HAND, new BlockHitResult(
+					Vec3.atCenterOf(h.absolutePos(P)), Direction.UP,
+					h.absolutePos(P), false));
+			h.assertTrue(r2.consumesAction(), "same-base repaint rejected");
+			ContourBlockEntity be3 = (ContourBlockEntity) h.getLevel()
+				.getBlockEntity(h.absolutePos(P));
+			h.assertTrue(be3.getMaterial().getBlock() == Blocks.SPRUCE_LOG
+				&& be3.getPaidUnits() == 1
+				&& !p.getItemInHand(InteractionHand.MAIN_HAND).isEmpty(),
+				"same-base repaint charged or failed");
+
+			// issue #3: explicit offhand material overrides the clicked
+			// support during ordinary shape-item placement
+			Player p2 = player(h);
+			ItemStack frame2 = new ItemStack(ContourRegistries.CONTOUR_BYTE_ITEM.get());
+			p2.setItemInHand(InteractionHand.MAIN_HAND, frame2);
+			p2.setItemInHand(InteractionHand.OFF_HAND,
+				new ItemStack(Items.OAK_PLANKS, 1));
+			p2.getInventory().add(new ItemStack(Items.OAK_PLANKS, 1));
+			h.setBlock(P, Blocks.DIRT.defaultBlockState());
+			var r3 = frame2.getItem().useOn(
+				ctx(h, p2, frame2, P, Direction.UP));
+			h.assertTrue(r3.consumesAction(), "byte placement rejected");
+			ContourBlockEntity be4 = (ContourBlockEntity) h.getLevel()
+				.getBlockEntity(h.absolutePos(P.above()));
+			h.assertTrue(be4 != null, "byte not placed above dirt");
+			h.assertTrue(be4.getMaterial().getBlock() == Blocks.OAK_PLANKS,
+				"offhand did not override clicked support: "
+					+ be4.getMaterial());
+			h.succeed();
+		} finally {
+			ContourConfig.CONSUME_MATERIAL.set(wasConsume);
+		}
+	}
+
+	// --- issue #4: Byte octant composition (ADR-016a) ---
+
+	@GameTest(template = "test_empty")
+	public void byteComposition(GameTestHelper h) {
+		boolean wasConsume = ContourConfig.consumeMaterial();
+		try {
+			ContourConfig.CONSUME_MATERIAL.set(true);
+			Player p = player(h);
+			BlockState host = ContourRegistries.CONTOUR_BYTE.get()
+				.defaultBlockState();
+			ContourBlockEntity be = be(h, host);
+			be.applyPayload(Blocks.DIRT.defaultBlockState(), 1,
+				Direction.NORTH, false);
+
+			// disjoint add ok; occupied + blockstate-octant refused
+			h.assertTrue(be.addByteOccupant(7, Blocks.STONE.defaultBlockState(), 1),
+				"disjoint octant refused");
+			h.assertTrue(!be.addByteOccupant(7, Blocks.OAK_LOG.defaultBlockState(), 1),
+				"occupied octant accepted");
+			h.assertTrue(!be.addByteOccupant(0, Blocks.OAK_LOG.defaultBlockState(), 1),
+				"blockstate octant accepted");
+			h.assertTrue(be.hostUnits() == 2,
+				"hostUnits ignores occupants: " + be.hostUnits());
+
+			// per-occupant paint hits only that occupant
+			h.assertTrue(be.paintByteOccupant(be.byteOccupantIndex(7),
+				Blocks.OAK_PLANKS.defaultBlockState(), 1), "occupant paint failed");
+			h.assertTrue(be.getMaterial().getBlock() == Blocks.DIRT,
+				"occupant paint hit slot0");
+			h.assertTrue(be.getByteOccupants().get(0).material().getBlock()
+				== Blocks.OAK_PLANKS && be.getByteOccupants().get(0).paid() == 1,
+				"occupant material/paid wrong");
+
+			// union shape spans the whole cell (octant 0 + octant 7)
+			var vs = host.getShape(h.getLevel(), h.absolutePos(P),
+				net.minecraft.world.phys.shapes.CollisionContext.empty());
+			h.assertTrue(vs.bounds().getXsize() == 1.0
+				&& vs.bounds().getYsize() == 1.0 && vs.bounds().getZsize() == 1.0,
+				"union bounds not full cell");
+
+			// drops: 1 blank per occupant + per-occupant material refunds
+			var drops = ((net.createcontour.block.ContourBlock) host.getBlock())
+				.ledgerDrops(host, be);
+			int blanks = 0, dirt = 0, planks = 0;
+			for (ItemStack s : drops) {
+				if (s.getItem() == ContourRegistries.CONTOUR_BYTE_ITEM.get())
+					blanks += s.getCount();
+				else if (s.getItem() == Items.DIRT)
+					dirt += s.getCount();
+				else if (s.getItem() == Items.OAK_PLANKS)
+					planks += s.getCount();
+			}
+			h.assertTrue(blanks == 2 && dirt == 1 && planks == 1,
+				"drops wrong blanks=" + blanks + " dirt=" + dirt
+					+ " planks=" + planks);
+
+			// schematic requirement: each occupant's own material unit
+			// + extra blank host item beyond Create's default entry
+			var reqList = be.getRequiredItems(host).getRequiredItems();
+			int reqDirt = 0, reqPlanks = 0, reqBlank = 0;
+			for (var sr : reqList) {
+				if (sr.stack.is(Items.DIRT))
+					reqDirt += sr.stack.getCount();
+				else if (sr.stack.is(Items.OAK_PLANKS))
+					reqPlanks += sr.stack.getCount();
+				else if (sr.stack.is(ContourRegistries.CONTOUR_BYTE_ITEM.get()))
+					reqBlank += sr.stack.getCount();
+			}
+			h.assertTrue(reqDirt == 1 && reqPlanks == 1 && reqBlank == 1,
+				"requirement wrong dirt=" + reqDirt + " planks=" + reqPlanks
+					+ " blank=" + reqBlank);
+
+			// save/load round-trip preserves occupants
+			CompoundTag tag = be.saveWithFullMetadata(
+				h.getLevel().registryAccess());
+			h.setBlock(P, host);
+			ContourBlockEntity be2 = (ContourBlockEntity) h.getLevel()
+				.getBlockEntity(h.absolutePos(P));
+			be2.loadWithComponents(tag, h.getLevel().registryAccess());
+			h.assertTrue(be2.getByteOccupants().size() == 1
+				&& be2.getByteOccupants().get(0).octant() == 7
+				&& be2.getByteOccupants().get(0).paid() == 1
+				&& be2.getByteOccupants().get(0).material().getBlock()
+					== Blocks.OAK_PLANKS,
+				"occupants lost in save/load");
+
+			// writeSafe exports occupants with exactly the charged units
+			CompoundTag safe = new CompoundTag();
+			be2.writeSafe(safe, h.getLevel().registryAccess());
+			var extras = safe.getList("ByteExtras",
+				net.minecraft.nbt.Tag.TAG_COMPOUND);
+			h.assertTrue(extras.size() == 1
+				&& extras.getCompound(0).getInt("Octant") == 7
+				&& extras.getCompound(0).getInt("Paid") == 1,
+				"writeSafe dropped occupants or paid");
+
+			// item-route merge: click a free octant of the live cell.
+			// The cell is dirt-painted, so look-fallback paints the new
+			// occupant dirt too and charges one unit under consume-on.
+			Player p2 = player(h);
+			ItemStack frame = new ItemStack(
+				ContourRegistries.CONTOUR_BYTE_ITEM.get(), 1);
+			p2.setItemInHand(InteractionHand.MAIN_HAND, frame);
+			p2.getInventory().add(new ItemStack(Items.DIRT, 1));
+			var absP = h.absolutePos(P);
+			var mergeCtx = new UseOnContext(h.getLevel(), p2,
+				InteractionHand.MAIN_HAND, frame, new BlockHitResult(
+					new Vec3(absP.getX() + 0.25, absP.getY() + 0.75,
+						absP.getZ() + 0.25),
+					Direction.UP, absP, false));
+			var resMerge = frame.getItem().useOn(mergeCtx);
+			h.assertTrue(resMerge.consumesAction(),
+				"octant merge rejected res=" + resMerge + " octant="
+					+ net.createcontour.block.ContourByteBlock.octantAt(
+						new Vec3(absP.getX() + 0.25, absP.getY() + 0.75,
+							absP.getZ() + 0.25), absP)
+					+ " occupied=" + be2.occupiedOctants()
+					+ " state=" + h.getBlockState(P));
+			h.assertTrue(be2.getByteOccupants().size() == 2,
+				"merge did not add occupant");
+			h.assertTrue(be2.getByteOccupants().get(1).material().getBlock()
+				== Blocks.DIRT && be2.getByteOccupants().get(1).paid() == 1,
+				"merged occupant ledger wrong");
+			h.assertTrue(frame.isEmpty(), "merged frame not consumed");
+			h.assertTrue(p2.getInventory().countItem(Items.DIRT) == 0,
+				"merge material not charged");
+
+			// wrench skips occupied octants instead of colliding
+			((net.createcontour.block.ContourBlock) h.getBlockState(P)
+				.getBlock()).onWrenched(host,
+				new UseOnContext(h.getLevel(), p2, InteractionHand.MAIN_HAND,
+					ItemStack.EMPTY, new BlockHitResult(
+						Vec3.atCenterOf(absP), Direction.UP, absP, false)));
+			BlockState afterWrench = h.getBlockState(P);
+			h.assertTrue(afterWrench.hasProperty(
+				net.createcontour.block.ContourByteBlock.OCTANT)
+				&& !be2.occupiedOctants().isEmpty(),
+				"wrench destroyed occupants");
+			h.assertTrue(!be2.getByteOccupants().isEmpty()
+				&& be2.getByteOccupants().stream().noneMatch(o ->
+					o.octant() == afterWrench.getValue(
+						net.createcontour.block.ContourByteBlock.OCTANT)
+							.ordinal()),
+				"wrench landed slot0 on an occupied octant");
+			h.succeed();
+		} finally {
+			ContourConfig.CONSUME_MATERIAL.set(wasConsume);
+		}
+	}
 }

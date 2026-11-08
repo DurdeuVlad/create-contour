@@ -380,6 +380,48 @@ until the owner approves them.
   through the existing ContourBoxModel path via BE model data).
   Catwalk and all non-panel shapes stay single-occupant.
 
+## ADR-016a: Bounded multipart extension - Byte octants and Flat Panes
+
+- Context: milestone issue #4 asks to compose multiple `contour_byte`
+  (8px octants) in one cell - four make a slab, eight a cube.
+  Issue #5 asks for panel composition; its interior/positional
+  variants are needs-input pending the matrix below.
+- Decision: add a SECOND occupancy channel for Bytes: 8 octant slots
+  (x<8/x>=8) x (y<8/y>=8) x (z<8/z>=8). A Byte occupant claims exactly
+  one octant; octants are disjoint by construction so any subset is
+  legal. Bytes never share a channel with panels - the two channels
+  are independent cells (a cell is either a Byte-composition cell or
+  a panel-composition cell, never mixed in v1).
+- Flat Pane matrix proposal for issue #5 (owner confirmation
+  pending): `contour_flat_pane` is an INTERIOR horizontal sheet
+  (y=7..9), not a face sheet. Proposed third channel: interior
+  mid-planes on X/Y/Z axes (each a 2px-thick center sheet). A flat
+  pane occupies its axis channel only; it physically cannot overlap
+  face-mounted panels (1px at cell boundary vs 7..9 interior), so
+  the matrix is: face slots <-> face slots = disjoint-slot check;
+  interior plane <-> interior plane = same-axis exclusive;
+  face <-> interior = always allowed.
+- NOT in v1 scope (named unsupported, per issue-5 honesty rule):
+  Panel mid/edge/diagonal positions (interior/touching geometry the
+  slot grid does not describe), mixed Byte+panel cells, and any
+  arbitrary sub-volume microblocks.
+- Migration rule: existing single-occupant saves keep their blocks
+  and paid data byte-for-byte; multipart cells are a new host block
+  + BE created on the first multi-occupant placement, never by
+  rewriting old state.
+- IMPLEMENTED (byte channel, 2026-11-08): lighter than the migration
+  rule - no second host block. Occupant #0 stays in the blockstate
+  `OCTANT` + BE material/paid (old saves byte-for-byte); occupants
+  1..7 live in `ContourBlockEntity.byteOccupants` (octant, material,
+  paid) serialized as `ByteExtras`. Merge gesture: clicking a free
+  octant of a byte cell with a byte frame adds an occupant
+  (canBeReplaced on the raw hit). Shape/collision unions occupied
+  octants; drops = 1 blank per occupant + per-occupant material
+  refunds; schematic requirement and `writeSafe` export each
+  occupant's own material/paid; paint and wrench target the
+  hit occupant (wrench skips occupied octants). Evidence:
+  `byteComposition` GameTest.
+
 ## Open decisions (tracked, not resolved)
 
 | ID | Question | Where resolved |
