@@ -267,6 +267,32 @@ public class ContourBlockItem extends BlockItem {
 				return InteractionResult.FAIL; // no world/stack mutation yet
 		}
 
+		// --- issue #4: Byte octant merge - click a free octant of an
+		// existing byte cell to add an occupant; no setBlock at all. ---
+		if (beforeState.getBlock() instanceof net.createcontour.block.ContourByteBlock
+			&& getBlock() == beforeState.getBlock()
+			&& beforeBe instanceof ContourBlockEntity tbe) {
+			if (level.isClientSide)
+				return InteractionResult.sidedSuccess(true);
+			if (tbe.isFrozen()) {
+				MaterialPolicy.refund(res);
+				return InteractionResult.FAIL;
+			}
+			int octant = net.createcontour.block.ContourByteBlock
+				.octantAt(context.getClickLocation(), placePos);
+			if (!tbe.occupiedOctants().contains(octant)
+				&& tbe.addByteOccupant(octant,
+					incoming != null ? incoming
+						: MaterialSafety.neutral(),
+					paidTransfer ? Math.min(prePaid, 1)
+						: (creative ? 0 : cost))) {
+				held.shrink(1);
+				return InteractionResult.sidedSuccess(false);
+			}
+			MaterialPolicy.refund(res);
+			return InteractionResult.FAIL;
+		}
+
 		InteractionResult result = super.place(context);
 		if (!result.consumesAction()) {
 			MaterialPolicy.refund(res);

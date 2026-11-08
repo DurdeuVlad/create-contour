@@ -799,6 +799,10 @@ public final class ContourClient {
 				}
 				return;
 			}
+			if (visualStage >= 8 && ponderOpenStage >= 0) {
+				ponderOpen(com.mojang.logging.LogUtils.getLogger());
+				return;
+			}
 			if (ran)
 				return;
 			// wait until the live-sync fixture BE exists (bounded 200 ticks)
@@ -816,6 +820,7 @@ public final class ContourClient {
 			ran = true;
 			var log = com.mojang.logging.LogUtils.getLogger();
 			log.info("[contour-smoke] START");
+			ponderSmoke(log);
 			run();
 			log.info("[contour-smoke] COMPLETE passed={} failed={} total={}",
 				passed, failed, passed + failed);
@@ -824,6 +829,59 @@ public final class ContourClient {
 					"[contour-smoke] " + failed + " failures");
 			buildVisualScene(Minecraft.getInstance());
 			visualStage = 1;
+		}
+
+		private static void ponderSmoke(org.slf4j.Logger log) {
+			try {
+				var access = net.createmod.ponder.foundation.PonderIndex
+					.getSceneAccess();
+				boolean placer = access.doScenesExistForId(
+					ContourRegistries.CONTOUR_PLACER.getId());
+				boolean blank = access.doScenesExistForId(
+					ContourRegistries.CONTOUR_BLANK_ITEM.getId());
+				boolean nbt = net.createmod.ponder.foundation.registration
+					.PonderSceneRegistry.loadSchematic(ResourceLocation
+						.fromNamespaceAndPath("create_contour", "placer"))
+					!= null;
+				log.info("[contour-smoke] ponder placer={} blank={} nbt={}",
+					placer, blank, nbt);
+				if (!placer || !blank || !nbt)
+					failed++;
+				else
+					passed++;
+			} catch (Throwable t) {
+				failed++;
+				log.error("[contour-smoke] ponder check threw", t);
+			}
+		}
+
+		private static int ponderOpenStage;
+
+		private static void ponderOpen(org.slf4j.Logger log) {
+			Minecraft mc = Minecraft.getInstance();
+			if (ponderOpenStage == 0) {
+				try {
+					mc.setScreen(net.createmod.ponder.foundation.ui.PonderUI
+						.of(new net.minecraft.world.item.ItemStack(
+							ContourRegistries.CONTOUR_PLACER.get())));
+					ponderOpenStage = 1;
+				} catch (Throwable t) {
+					failed++;
+					ponderOpenStage = -1;
+					log.error("[contour-smoke] ponder OPEN threw", t);
+				}
+			} else if (ponderOpenStage == 1) {
+				if (mc.screen instanceof net.createmod.ponder.foundation.ui.PonderUI) {
+					log.info("[contour-smoke] ponder OPEN ok");
+					passed++;
+				} else {
+					failed++;
+					log.error("[contour-smoke] ponder screen not open: {}",
+						mc.screen);
+				}
+				mc.setScreen(null);
+				ponderOpenStage = -1;
+			}
 		}
 
 	private static int visualStage, visualTicks;

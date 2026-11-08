@@ -128,7 +128,64 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 
 	public int hostUnits() {
 		return getBlockState().getBlock() instanceof ContourBlock cb
-			? cb.hostUnits(getBlockState()) : 1;
+			? cb.hostUnits(getBlockState()) + byteOccupants.size() : 1;
+	}
+
+	// --- issue #4: extra Byte occupants (occupant #0 stays in
+	// blockstate OCTANT + material + paidUnits, so old saves are
+	// byte-for-byte compatible) ---
+
+	public record ByteOccupant(int octant, BlockState material, int paid) {
+	}
+
+	private final java.util.List<ByteOccupant> byteOccupants =
+		new java.util.ArrayList<>();
+
+	public java.util.List<ByteOccupant> getByteOccupants() {
+		return java.util.Collections.unmodifiableList(byteOccupants);
+	}
+
+	public boolean addByteOccupant(int octant, BlockState mat, int paid) {
+		if (frozen || occupiedOctants().contains(octant))
+			return false;
+		byteOccupants.add(new ByteOccupant(octant,
+			MaterialSafety.sanitize(mat), Math.max(0, paid)));
+		notifyUpdate();
+		if (level != null)
+			refreshMaterialAppearance();
+		return true;
+	}
+
+	public int byteOccupantIndex(int octant) {
+		for (int i = 0; i < byteOccupants.size(); i++)
+			if (byteOccupants.get(i).octant() == octant)
+				return i;
+		return -1;
+	}
+
+	public boolean paintByteOccupant(int idx, BlockState mat, int paid) {
+		if (frozen || idx < 0 || idx >= byteOccupants.size())
+			return false;
+		ByteOccupant old = byteOccupants.get(idx);
+		byteOccupants.set(idx, new ByteOccupant(old.octant(),
+			MaterialSafety.sanitize(mat), Math.max(0, paid)));
+		notifyUpdate();
+		if (level != null)
+			refreshMaterialAppearance();
+		return true;
+	}
+
+	public java.util.Set<Integer> occupiedOctants() {
+		java.util.Set<Integer> s = new java.util.HashSet<>();
+		s.add(getBlockState().hasProperty(
+			net.createcontour.block.ContourByteBlock.OCTANT)
+				? getBlockState().getValue(
+					net.createcontour.block.ContourByteBlock.OCTANT)
+						.ordinal()
+				: -1);
+		for (ByteOccupant o : byteOccupants)
+			s.add(o.octant());
+		return s;
 	}
 
 	/**
@@ -194,10 +251,19 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 	@Override
 	public ItemRequirement getRequiredItems(BlockState state) {
 		java.util.List<ItemStack> stacks = new java.util.ArrayList<>();
+		int blockUnits = state.getBlock()
+			instanceof net.createcontour.block.ContourBlock cb2
+				? cb2.hostUnits(state) : 1;
 		if (hasCustomMaterial() && ContourConfig.consumeMaterial()
 			&& !material.getBlock().asItem().getDefaultInstance().isEmpty()) {
-			stacks.add(new ItemStack(material.getBlock().asItem(), hostUnits()));
+			stacks.add(new ItemStack(material.getBlock().asItem(), blockUnits));
 		}
+		if (ContourConfig.consumeMaterial())
+			for (ByteOccupant o : byteOccupants)
+				if (o.material() != null && !MaterialSafety.isNeutral(o.material())
+					&& !o.material().getBlock().asItem().getDefaultInstance()
+						.isEmpty())
+					stacks.add(new ItemStack(o.material().getBlock().asItem(), 1));
 		int defaultUnits =
 			state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.SLAB_TYPE)
 				&& state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.SLAB_TYPE)
@@ -264,6 +330,24 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 		paidUnits = Math.min(parsedPaid, hostUnits());
 		if (MaterialSafety.isNeutral(material))
 			paidUnits = 0;
+		byteOccupants.clear();
+		if (tag.contains("ByteExtras")) {
+			for (net.minecraft.nbt.Tag t : tag.getList("ByteExtras",
+				net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+				CompoundTag e = (CompoundTag) t;
+				int o = e.getInt("Octant");
+				if (o >= 0 && o < 8) {
+					try {
+						byteOccupants.add(new ByteOccupant(o,
+							MaterialSafety.sanitize(NbtUtils.readBlockState(
+								provider.lookupOrThrow(Registries.BLOCK),
+								e.getCompound("Material"))),
+							Math.max(0, e.getInt("Paid"))));
+					} catch (RuntimeException ignored) {
+					}
+				}
+			}
+		}
 		if (level != null)
 			refreshMaterialAppearance();
 	}
@@ -309,6 +393,17 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 		tag.putInt("PaidUnits", paidUnits);
 		tag.putString("Facing", facing.name());
 		tag.putBoolean("Top", top);
+		if (!byteOccupants.isEmpty()) {
+			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+			for (ByteOccupant o : byteOccupants) {
+				CompoundTag e = new CompoundTag();
+				e.putInt("Octant", o.octant());
+				e.put("Material", NbtUtils.writeBlockState(o.material()));
+				e.putInt("Paid", o.paid());
+				list.add(e);
+			}
+			tag.put("ByteExtras", list);
+		}
 	}
 
 	@Override
@@ -333,7 +428,27 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 		// Consume-off exports no credit, so a free paint can never become a
 		// refundable material source. Item hints are always stripped.
 		tag.putInt("PaidUnits", hasCustomMaterial()
-			&& ContourConfig.consumeMaterial() ? hostUnits() : 0);
+			&& ContourConfig.consumeMaterial()
+				? (getBlockState().getBlock()
+					instanceof net.createcontour.block.ContourBlock cb3
+						? cb3.hostUnits(getBlockState()) : 1)
+				: 0);
+		// Extra occupants export with paid only where the requirement
+		// above will charge one material unit at print; consume-off
+		// exports none so free paint can never become a refund source.
+		if (!byteOccupants.isEmpty()) {
+			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+			for (ByteOccupant o : byteOccupants) {
+				CompoundTag e = new CompoundTag();
+				e.putInt("Octant", o.octant());
+				e.put("Material", NbtUtils.writeBlockState(o.material()));
+				boolean custom = o.material() != null
+					&& !MaterialSafety.isNeutral(o.material());
+				e.putInt("Paid", custom && ContourConfig.consumeMaterial() ? 1 : 0);
+				list.add(e);
+			}
+			tag.put("ByteExtras", list);
+		}
 		tag.remove("Item");
 	}
 
@@ -341,9 +456,17 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 
 	@Override
 	public ModelData getModelData() {
-		return ModelData.builder()
-			.with(CopycatModel.MATERIAL_PROPERTY, material)
-			.build();
+		ModelData.Builder b = ModelData.builder()
+			.with(CopycatModel.MATERIAL_PROPERTY, material);
+		if (!byteOccupants.isEmpty()) {
+			java.util.List<net.createcontour.client.ContourByteModel.ByteExtra> ex =
+				new java.util.ArrayList<>();
+			for (ByteOccupant o : byteOccupants)
+				ex.add(new net.createcontour.client.ContourByteModel.ByteExtra(
+					o.octant(), o.material()));
+			b.with(net.createcontour.client.ContourByteModel.BYTE_EXTRAS, ex);
+		}
+		return b.build();
 	}
 
 	// --- lifecycle ---

@@ -71,7 +71,7 @@ public abstract class ContourModel extends CopycatModel {
 		return ShapeQuads.boxesForMask(maskFor(state));
 	}
 
-	private List<BakedQuad> emitShape(BlockState state, @Nullable Direction side,
+	protected List<BakedQuad> emitShape(BlockState state, @Nullable Direction side,
 		java.util.function.Function<Direction, List<ShapeQuads.SrcQuad>> srcFor) {
 		List<BakedQuad> out = new ArrayList<>(
 			ShapeQuads.emitBoxes(boxesFor(state), side, srcFor));
@@ -173,7 +173,7 @@ public abstract class ContourModel extends CopycatModel {
 	}
 
 	/** Texture sources for one face dir: material quads, or neutral synth. */
-	private List<ShapeQuads.SrcQuad> sourcesFor(@Nullable BlockState material,
+	protected List<ShapeQuads.SrcQuad> sourcesFor(@Nullable BlockState material,
 		Direction dir, RandomSource rand, ModelData wrappedData,
 		@Nullable RenderType renderType) {
 		if (material != null) {

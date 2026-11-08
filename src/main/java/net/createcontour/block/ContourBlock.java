@@ -224,12 +224,17 @@ public abstract class ContourBlock extends WaterloggedCopycatBlock {
 	 */
 	public List<ItemStack> ledgerDrops(BlockState state, ContourBlockEntity be) {
 		java.util.ArrayList<ItemStack> drops = new java.util.ArrayList<>();
-		for (int i = 0; i < hostUnits(state); i++)
+		for (int i = 0; i < be.hostUnits(); i++)
 			drops.add(new ItemStack(asItem()));
 		BlockState material = be.getMaterial();
 		int paid = be.getPaidUnits();
 		if (paid > 0 && material != null && !MaterialSafety.isNeutral(material))
 			drops.add(new ItemStack(material.getBlock().asItem(), paid));
+		for (ContourBlockEntity.ByteOccupant o : be.getByteOccupants())
+			if (o.paid() > 0 && o.material() != null
+				&& !MaterialSafety.isNeutral(o.material()))
+				drops.add(new ItemStack(o.material().getBlock().asItem(),
+					o.paid()));
 		return drops;
 	}
 

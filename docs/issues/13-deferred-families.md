@@ -35,6 +35,14 @@ paid ledger), a revised drop/loot path, occupancy-aware collision and
 a multipart render path (ContourBoxModel already consumes boxesFor
 per state; a multipart needs boxes per occupant).
 
+PARTIAL IMPLEMENTATION (2026-11-08): the Byte octant channel shipped -
+occupant #0 in blockstate OCTANT, occupants 1..7 in BE `byteOccupants`
+with per-occupant material/paid, merge-on-free-octant placement, union
+shape, per-occupant drops/requirements/writeSafe, targeted paint and
+wrench (ADR-016a IMPLEMENTED note; `byteComposition` GameTest). The
+panel/flat-pane channel matrix remains owner-input pending in
+ADR-016a's proposal and GH issue #5.
+
 Acceptance contract when picked up:
 - New `ContourMultipartBlock` + occupant list on a dedicated BE type;
   `getShape` unions occupant boxes; each occupant keeps its own
