@@ -466,6 +466,7 @@ until the owner approves them.
   panes), not a second architecture. "Looks good next to anything"
   becomes the enforced invariant: lattice conformance (geometry) +
   anchored UVs (texture) + declared mates (intent).
+- Spec surface: docs/Continuation.md (vocabulary + mate tables).
 
 ## Open decisions (tracked, not resolved)
 
