@@ -67,6 +67,7 @@ cell, ADR-016) and kinetic/fluid disguises - see
 
 - `docs/Business.md` / `docs/Decision.md` - product contract and ADRs
 - `docs/Architecture.md` / `docs/Testing.md` - internals and evidence model
+- `docs/Continuation.md` - edge-profile vocabulary + per-family mate tables (ADR-017)
 - `docs/issues/` - per-issue contracts with acceptance criteria
 - `docs/publishing/curseforge-page.md` - CurseForge publishing package
 
