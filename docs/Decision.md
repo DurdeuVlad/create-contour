@@ -422,6 +422,51 @@ until the owner approves them.
   hit occupant (wrench skips occupied octants). Evidence:
   `byteComposition` GameTest.
 
+## ADR-017: The Contour design system - unified lattice + seam continuation
+
+- Status: accepted direction (owner confirmed 2026-11-08); binding on
+  all new shapes and families from this point.
+- Context: 114 forms exist as individual objects. The enduring product
+  rule - usable with ANY other blocks next to it and look good - is a
+  continuation requirement, not a shape-count requirement. Owner picked
+  the A+C+D+E composite: one sub-voxel lattice governing both
+  cell-internal composition and cell-boundary continuation, plus
+  texture-continuation and curated mate kits. Auto-morph (neighbor-
+  driven state changes) is REJECTED: it fights determinism, the paid
+  ledger, and writeSafe identity.
+- Lattice contract: the cell is a 16x16x16 px grid. Every shape's
+  collision/shape boxes have vertices on integer-px coordinates; every
+  planar face is axis-parallel or a documented lattice diagonal whose
+  start/end edges are lattice-aligned. Testable: a GameTest may assert
+  grid conformance of every `getShape`/`boxesFor` box.
+- Occupancy channels (inside a cell): octant channel (8px cubes,
+  SHIPPED), face-quadrant channel (panels - pending #5 matrix),
+  interior-plane channel (flat panes - pending #5 matrix). Channels
+  never overlap within a cell; cross-channel co-residence is allowed
+  only where the geometries cannot intersect (e.g., face panel at cell
+  boundary vs interior mid-plane).
+- Boundary continuation: two forms on adjacent cells "continue" when
+  their interface shares a lattice plane, overlapping lattice area, and
+  a compatible edge profile. Edge-profile vocabulary to be documented
+  per family (flat, step-N, diagonal, lip/round, open). Profile
+  compatibility is a provable property, not a visual judgment - the
+  continuation gallery fixture makes it screenshot-verifiable.
+- Texture continuation: painted-material quads should anchor to the
+  cell grid so the same material flows across Contour neighbors and
+  Contour<->vanilla seams where the geometry permits. Requires a UV
+  audit of the emitted quads first (what anchoring exists today);
+  lattice diagonals can never align perfectly - those seams are
+  documented as inherent, not defects.
+- Curated kits: new shapes ship with a declared mate table (which
+  profiles they continue and on which faces). The continuation gallery
+  QA fixture grows per kit: rendered pair shots are the acceptance
+  evidence, not prose claims.
+- Consequences: issue #5's matrix pick now happens inside this lattice
+  contract; Family A's remaining work is channel completion (panels/
+  panes), not a second architecture. "Looks good next to anything"
+  becomes the enforced invariant: lattice conformance (geometry) +
+  anchored UVs (texture) + declared mates (intent).
+
 ## Open decisions (tracked, not resolved)
 
 | ID | Question | Where resolved |
