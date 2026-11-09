@@ -401,6 +401,12 @@ until the owner approves them.
   the matrix is: face slots <-> face slots = disjoint-slot check;
   interior plane <-> interior plane = same-axis exclusive;
   face <-> interior = always allowed.
+- RESOLVED (2026-11-08, evidence + builder-demand analysis):
+  interior mid-plane option A confirmed - matches the interior/
+  centered-sheet category builders use for ceilings/floors/trim
+  (the gap face-mounted panels cannot fill), and makes all three
+  channels collision-free by construction. Face-mounted pane
+  (option B) rejected: adds no capability over the panel family.
 - NOT in v1 scope (named unsupported, per issue-5 honesty rule):
   Panel mid/edge/diagonal positions (interior/touching geometry the
   slot grid does not describe), mixed Byte+panel cells, and any
