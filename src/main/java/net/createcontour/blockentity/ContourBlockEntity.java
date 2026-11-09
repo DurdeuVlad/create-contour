@@ -128,7 +128,8 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 
 	public int hostUnits() {
 		return getBlockState().getBlock() instanceof ContourBlock cb
-			? cb.hostUnits(getBlockState()) + byteOccupants.size() : 1;
+			? cb.hostUnits(getBlockState()) + byteOccupants.size()
+				+ panelOccupants.size() + paneOccupants.size() : 1;
 	}
 
 	// --- issue #4: extra Byte occupants (occupant #0 stays in
@@ -186,6 +187,136 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 		for (ByteOccupant o : byteOccupants)
 			s.add(o.octant());
 		return s;
+	}
+
+	// --- issue #12: panel face-quadrant channel (occupant #0 stays in
+	// the host blockstate; extras carry a slot anchor + kind) ---
+
+	/**
+	 * Extra panel-family occupant: slot = face*4 + kind-specific sub
+	 * (byte-panel quadrant / half-id / 0 for full-face); kind is one of
+	 * PanelSlots.KIND_*. The slot footprint expands per kind.
+	 */
+	public record PanelOccupant(int slot, int kind, BlockState material,
+		int paid) {
+	}
+
+	private final java.util.List<PanelOccupant> panelOccupants =
+		new java.util.ArrayList<>();
+
+	public java.util.List<PanelOccupant> getPanelOccupants() {
+		return java.util.Collections.unmodifiableList(panelOccupants);
+	}
+
+	/** Union of every claimed face-quadrant slot (host + extras). */
+	public java.util.Set<Integer> occupiedPanelSlots() {
+		java.util.Set<Integer> s =
+			net.createcontour.block.PanelSlots.stateSlots(getBlockState());
+		for (PanelOccupant o : panelOccupants)
+			s.addAll(net.createcontour.block.PanelSlots.slots(o.slot(),
+				o.kind()));
+		return s;
+	}
+
+	public boolean panelSlotsFree(java.util.Set<Integer> claim) {
+		return java.util.Collections.disjoint(occupiedPanelSlots(), claim);
+	}
+
+	public boolean addPanelOccupant(int slot, int kind, BlockState mat,
+		int paid) {
+		if (frozen || kind < 0 || slot < 0 || slot >= 24)
+			return false;
+		if (!panelSlotsFree(
+			net.createcontour.block.PanelSlots.slots(slot, kind)))
+			return false;
+		panelOccupants.add(new PanelOccupant(slot, kind,
+			MaterialSafety.sanitize(mat), Math.max(0, paid)));
+		notifyUpdate();
+		if (level != null)
+			refreshMaterialAppearance();
+		return true;
+	}
+
+	/** Extra-occupant index whose footprint contains faceSlot, or -1. */
+	public int panelOccupantIndex(int faceSlot) {
+		for (int i = 0; i < panelOccupants.size(); i++) {
+			PanelOccupant o = panelOccupants.get(i);
+			if (net.createcontour.block.PanelSlots
+				.slots(o.slot(), o.kind()).contains(faceSlot))
+				return i;
+		}
+		return -1;
+	}
+
+	public boolean paintPanelOccupant(int idx, BlockState mat, int paid) {
+		if (frozen || idx < 0 || idx >= panelOccupants.size())
+			return false;
+		PanelOccupant old = panelOccupants.get(idx);
+		panelOccupants.set(idx, new PanelOccupant(old.slot(), old.kind(),
+			MaterialSafety.sanitize(mat), Math.max(0, paid)));
+		notifyUpdate();
+		if (level != null)
+			refreshMaterialAppearance();
+		return true;
+	}
+
+	// --- issue #12: interior flat-pane channel (axis mid-planes) ---
+
+	/**
+	 * Extra flat-pane occupant: axis 0/1/2 = X/Y/Z mid-plane sheet.
+	 * Occupant #0 is always the blockstate Y sheet; same-axis is
+	 * exclusive (coincident planes), different axes cross freely.
+	 */
+	public record PaneOccupant(int axis, BlockState material, int paid) {
+	}
+
+	private final java.util.List<PaneOccupant> paneOccupants =
+		new java.util.ArrayList<>();
+
+	public java.util.List<PaneOccupant> getPaneOccupants() {
+		return java.util.Collections.unmodifiableList(paneOccupants);
+	}
+
+	/** Occupied interior-plane axes (host blockstate + extras). */
+	public java.util.Set<Integer> occupiedPaneAxes() {
+		java.util.Set<Integer> s = new java.util.HashSet<>();
+		if (getBlockState().getBlock()
+			instanceof net.createcontour.block.ContourFlatPaneBlock)
+			s.add(Direction.Axis.Y.ordinal());
+		for (PaneOccupant o : paneOccupants)
+			s.add(o.axis());
+		return s;
+	}
+
+	public boolean addPaneOccupant(int axis, BlockState mat, int paid) {
+		if (frozen || axis < 0 || axis > 2
+			|| occupiedPaneAxes().contains(axis))
+			return false;
+		paneOccupants.add(new PaneOccupant(axis,
+			MaterialSafety.sanitize(mat), Math.max(0, paid)));
+		notifyUpdate();
+		if (level != null)
+			refreshMaterialAppearance();
+		return true;
+	}
+
+	public int paneOccupantIndex(int axis) {
+		for (int i = 0; i < paneOccupants.size(); i++)
+			if (paneOccupants.get(i).axis() == axis)
+				return i;
+		return -1;
+	}
+
+	public boolean paintPaneOccupant(int idx, BlockState mat, int paid) {
+		if (frozen || idx < 0 || idx >= paneOccupants.size())
+			return false;
+		PaneOccupant old = paneOccupants.get(idx);
+		paneOccupants.set(idx, new PaneOccupant(old.axis(),
+			MaterialSafety.sanitize(mat), Math.max(0, paid)));
+		notifyUpdate();
+		if (level != null)
+			refreshMaterialAppearance();
+		return true;
 	}
 
 	/**
@@ -258,21 +389,41 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 			&& !material.getBlock().asItem().getDefaultInstance().isEmpty()) {
 			stacks.add(new ItemStack(material.getBlock().asItem(), blockUnits));
 		}
-		if (ContourConfig.consumeMaterial())
+		if (ContourConfig.consumeMaterial()) {
 			for (ByteOccupant o : byteOccupants)
 				if (o.material() != null && !MaterialSafety.isNeutral(o.material())
 					&& !o.material().getBlock().asItem().getDefaultInstance()
 						.isEmpty())
 					stacks.add(new ItemStack(o.material().getBlock().asItem(), 1));
+			for (PanelOccupant o : panelOccupants)
+				if (o.material() != null && !MaterialSafety.isNeutral(o.material())
+					&& !o.material().getBlock().asItem().getDefaultInstance()
+						.isEmpty())
+					stacks.add(new ItemStack(o.material().getBlock().asItem(), 1));
+			for (PaneOccupant o : paneOccupants)
+				if (o.material() != null && !MaterialSafety.isNeutral(o.material())
+					&& !o.material().getBlock().asItem().getDefaultInstance()
+						.isEmpty())
+					stacks.add(new ItemStack(o.material().getBlock().asItem(), 1));
+		}
 		int defaultUnits =
 			state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.SLAB_TYPE)
 				&& state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.SLAB_TYPE)
 					== net.minecraft.world.level.block.state.properties.SlabType.DOUBLE ? 2 : 1;
-		int extraUnits = hostUnits() - defaultUnits;
+		// Host-item extras cover own-kind occupants only (bytes); panel
+		// and pane occupants each require their own kind's blank item.
+		int extraUnits = hostUnits() - panelOccupants.size()
+			- paneOccupants.size() - defaultUnits;
 		if (extraUnits > 0
 			&& !state.getBlock().asItem().getDefaultInstance().isEmpty()) {
 			stacks.add(new ItemStack(state.getBlock().asItem(), extraUnits));
 		}
+		for (PanelOccupant o : panelOccupants)
+			stacks.add(new ItemStack(
+				net.createcontour.block.PanelSlots.itemForKind(o.kind())));
+		for (PaneOccupant o : paneOccupants)
+			stacks.add(new ItemStack(net.createcontour.registry
+				.ContourRegistries.CONTOUR_FLAT_PANE_ITEM.get()));
 		if (stacks.isEmpty())
 			return ItemRequirement.NONE;
 		return new ItemRequirement(ItemRequirement.ItemUseType.CONSUME, stacks);
@@ -348,6 +499,55 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 				}
 			}
 		}
+		panelOccupants.clear();
+		if (tag.contains("PanelExtras")) {
+			java.util.Set<Integer> claimed =
+				new java.util.HashSet<>(occupiedPanelSlots());
+			for (net.minecraft.nbt.Tag t : tag.getList("PanelExtras",
+				net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+				CompoundTag e = (CompoundTag) t;
+				int slot = e.getInt("Slot"), kind = e.getInt("Kind");
+				java.util.Set<Integer> fp = e.contains("Slot")
+					&& e.contains("Kind") && kind >= 0 && kind <= 2
+					&& slot >= 0 && slot < 24
+						? net.createcontour.block.PanelSlots.slots(slot, kind)
+						: java.util.Set.of();
+				// malformed or slot-conflicting entries are dropped, not
+				// trusted (footprints are disjointness-checked on load).
+				if (fp.isEmpty() || !java.util.Collections.disjoint(claimed, fp))
+					continue;
+				try {
+					panelOccupants.add(new PanelOccupant(slot, kind,
+						MaterialSafety.sanitize(NbtUtils.readBlockState(
+							provider.lookupOrThrow(Registries.BLOCK),
+							e.getCompound("Material"))),
+						Math.max(0, e.getInt("Paid"))));
+					claimed.addAll(fp);
+				} catch (RuntimeException ignored) {
+				}
+			}
+		}
+		paneOccupants.clear();
+		if (tag.contains("PaneExtras")) {
+			java.util.Set<Integer> claimed =
+				new java.util.HashSet<>(occupiedPaneAxes());
+			for (net.minecraft.nbt.Tag t : tag.getList("PaneExtras",
+				net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+				CompoundTag e = (CompoundTag) t;
+				int axis = e.getInt("Axis");
+				if (axis < 0 || axis > 2 || claimed.contains(axis))
+					continue;
+				try {
+					paneOccupants.add(new PaneOccupant(axis,
+						MaterialSafety.sanitize(NbtUtils.readBlockState(
+							provider.lookupOrThrow(Registries.BLOCK),
+							e.getCompound("Material"))),
+						Math.max(0, e.getInt("Paid"))));
+					claimed.add(axis);
+				} catch (RuntimeException ignored) {
+				}
+			}
+		}
 		if (level != null)
 			refreshMaterialAppearance();
 	}
@@ -404,6 +604,29 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 			}
 			tag.put("ByteExtras", list);
 		}
+		if (!panelOccupants.isEmpty()) {
+			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+			for (PanelOccupant o : panelOccupants) {
+				CompoundTag e = new CompoundTag();
+				e.putInt("Slot", o.slot());
+				e.putInt("Kind", o.kind());
+				e.put("Material", NbtUtils.writeBlockState(o.material()));
+				e.putInt("Paid", o.paid());
+				list.add(e);
+			}
+			tag.put("PanelExtras", list);
+		}
+		if (!paneOccupants.isEmpty()) {
+			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+			for (PaneOccupant o : paneOccupants) {
+				CompoundTag e = new CompoundTag();
+				e.putInt("Axis", o.axis());
+				e.put("Material", NbtUtils.writeBlockState(o.material()));
+				e.putInt("Paid", o.paid());
+				list.add(e);
+			}
+			tag.put("PaneExtras", list);
+		}
 	}
 
 	@Override
@@ -449,6 +672,33 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 			}
 			tag.put("ByteExtras", list);
 		}
+		if (!panelOccupants.isEmpty()) {
+			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+			for (PanelOccupant o : panelOccupants) {
+				CompoundTag e = new CompoundTag();
+				e.putInt("Slot", o.slot());
+				e.putInt("Kind", o.kind());
+				e.put("Material", NbtUtils.writeBlockState(o.material()));
+				boolean custom = o.material() != null
+					&& !MaterialSafety.isNeutral(o.material());
+				e.putInt("Paid", custom && ContourConfig.consumeMaterial() ? 1 : 0);
+				list.add(e);
+			}
+			tag.put("PanelExtras", list);
+		}
+		if (!paneOccupants.isEmpty()) {
+			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+			for (PaneOccupant o : paneOccupants) {
+				CompoundTag e = new CompoundTag();
+				e.putInt("Axis", o.axis());
+				e.put("Material", NbtUtils.writeBlockState(o.material()));
+				boolean custom = o.material() != null
+					&& !MaterialSafety.isNeutral(o.material());
+				e.putInt("Paid", custom && ContourConfig.consumeMaterial() ? 1 : 0);
+				list.add(e);
+			}
+			tag.put("PaneExtras", list);
+		}
 		tag.remove("Item");
 	}
 
@@ -465,6 +715,24 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 				ex.add(new net.createcontour.client.ContourByteModel.ByteExtra(
 					o.octant(), o.material()));
 			b.with(net.createcontour.client.ContourByteModel.BYTE_EXTRAS, ex);
+		}
+		if (!panelOccupants.isEmpty()) {
+			java.util.List<net.createcontour.client.ContourMultipartModel.PanelExtra> ex =
+				new java.util.ArrayList<>();
+			for (PanelOccupant o : panelOccupants)
+				ex.add(new net.createcontour.client.ContourMultipartModel.PanelExtra(
+					o.slot(), o.kind(), o.material()));
+			b.with(net.createcontour.client.ContourMultipartModel.PANEL_EXTRAS,
+				ex);
+		}
+		if (!paneOccupants.isEmpty()) {
+			java.util.List<net.createcontour.client.ContourMultipartModel.PaneExtra> ex =
+				new java.util.ArrayList<>();
+			for (PaneOccupant o : paneOccupants)
+				ex.add(new net.createcontour.client.ContourMultipartModel.PaneExtra(
+					o.axis(), o.material()));
+			b.with(net.createcontour.client.ContourMultipartModel.PANE_EXTRAS,
+				ex);
 		}
 		return b.build();
 	}

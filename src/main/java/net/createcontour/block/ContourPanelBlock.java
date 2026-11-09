@@ -191,12 +191,35 @@ public class ContourPanelBlock extends ContourBlock {
 	@Override
 	public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
 		CollisionContext ctx) {
-		return SHAPES[state.getValue(POSITION).ordinal()];
+		VoxelShape s = SHAPES[state.getValue(POSITION).ordinal()];
+		if (level.getBlockEntity(pos) instanceof ContourBlockEntity be)
+			for (ContourBlockEntity.PanelOccupant occ : be.getPanelOccupants())
+				for (float[] b : PanelSlots.occupantBoxes(occ.slot(), occ.kind()))
+					s = Shapes.or(s,
+						Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
+		return s;
 	}
 
 	@Override
 	public boolean useShapeForLightOcclusion(BlockState state) {
 		return true;
+	}
+
+	/** Merge eligibility: family item + disjoint slot claim (PanelSlots). */
+	@Override
+	public boolean canBeReplaced(BlockState state, BlockPlaceContext ctx) {
+		return PanelSlots.canMergeReplace(state, ctx);
+	}
+
+	@Override
+	protected net.minecraft.world.ItemInteractionResult useItemOn(
+		net.minecraft.world.item.ItemStack stack, BlockState state,
+		net.minecraft.world.level.Level level, BlockPos pos,
+		net.minecraft.world.entity.player.Player player,
+		net.minecraft.world.InteractionHand hand,
+		net.minecraft.world.phys.BlockHitResult hit) {
+		return usePanelOccupantItemOn(stack, state, level, pos, player, hand,
+			hit);
 	}
 
 	/**
@@ -265,7 +288,26 @@ public class ContourPanelBlock extends ContourBlock {
 
 	@Override
 	protected BlockState wrenchTarget(BlockState state, ContourBlockEntity be) {
-		return state.cycle(POSITION);
+		// Cycle positions, skipping any whose slot footprint collides
+		// with OTHER occupants. Non-FACE positions claim all 24 slots,
+		// so they stay reachable only while no extras exist.
+		if (be == null)
+			return state.cycle(POSITION);
+		java.util.Set<Integer> others = be.occupiedPanelSlots();
+		others.removeAll(currentSlots(state));
+		PanelPos p = state.getValue(POSITION);
+		for (int i = 0; i < PanelPos.values().length - 1; i++) {
+			p = PanelPos.values()[(p.ordinal() + 1)
+				% PanelPos.values().length];
+			BlockState cand = state.setValue(POSITION, p);
+			if (java.util.Collections.disjoint(others, currentSlots(cand)))
+				return cand;
+		}
+		return state;
+	}
+
+	private static java.util.Set<Integer> currentSlots(BlockState state) {
+		return PanelSlots.stateSlots(state);
 	}
 
 	@Override

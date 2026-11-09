@@ -41,6 +41,22 @@ public class ContourPanelModel extends ContourModel {
 		return ContourRegistries.CONTOUR_PANEL.get().defaultBlockState();
 	}
 
+	/**
+	 * Extra face-quadrant occupants (issue #12) emitted after the bound
+	 * state's quads, same ModelData lists as ContourMultipartModel.
+	 */
+	@Override
+	public List<BakedQuad> getQuads(@Nullable BlockState state,
+		@Nullable Direction side, net.minecraft.util.RandomSource rand,
+		net.neoforged.neoforge.client.model.data.ModelData data,
+		@Nullable net.minecraft.client.renderer.RenderType renderType) {
+		List<BakedQuad> quads = new ArrayList<>(
+			super.getQuads(state, side, rand, data, renderType));
+		quads.addAll(ContourMultipartModel.emitExtras(this, data, side, rand,
+			renderType));
+		return quads;
+	}
+
 	private static Vector3f v(int a1, int a2, int a3, float c1, float c2, float c3) {
 		float[] f = new float[3];
 		f[a1] = c1;

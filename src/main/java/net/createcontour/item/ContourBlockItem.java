@@ -293,6 +293,58 @@ public class ContourBlockItem extends BlockItem {
 			return InteractionResult.FAIL;
 		}
 
+		// --- issue #12: panel face-quadrant merge - any panel-family item
+		// clicked into a panel-family cell claims face slots; disjoint
+		// claims add an occupant without touching the blockstate. ---
+		if (net.createcontour.block.PanelSlots
+			.isPanelFamily(beforeState.getBlock())
+			&& net.createcontour.block.PanelSlots.isPanelFamily(getBlock())
+			&& beforeBe instanceof ContourBlockEntity tbe) {
+			if (level.isClientSide)
+				return InteractionResult.sidedSuccess(true);
+			if (tbe.isFrozen()) {
+				MaterialPolicy.refund(res);
+				return InteractionResult.FAIL;
+			}
+			Direction face = context.getClickedFace();
+			int kind = net.createcontour.block.PanelSlots.kindOf(getBlock());
+			int slot = net.createcontour.block.PanelSlots.incomingSlot(
+				getBlock(), face, context.getClickLocation(), placePos);
+			if (slot >= 0 && tbe.addPanelOccupant(slot, kind,
+				incoming != null ? incoming : MaterialSafety.neutral(),
+				paidTransfer ? Math.min(prePaid, 1)
+					: (creative ? 0 : cost))) {
+				held.shrink(1);
+				return InteractionResult.sidedSuccess(false);
+			}
+			MaterialPolicy.refund(res);
+			return InteractionResult.FAIL;
+		}
+
+		// --- issue #12: flat-pane interior-axis merge - claims the mid
+		// plane on the clicked face's axis; same-axis exclusive. ---
+		if (beforeState.getBlock()
+			instanceof net.createcontour.block.ContourFlatPaneBlock
+			&& getBlock() == beforeState.getBlock()
+			&& beforeBe instanceof ContourBlockEntity tbe) {
+			if (level.isClientSide)
+				return InteractionResult.sidedSuccess(true);
+			if (tbe.isFrozen()) {
+				MaterialPolicy.refund(res);
+				return InteractionResult.FAIL;
+			}
+			if (tbe.addPaneOccupant(
+				context.getClickedFace().getAxis().ordinal(),
+				incoming != null ? incoming : MaterialSafety.neutral(),
+				paidTransfer ? Math.min(prePaid, 1)
+					: (creative ? 0 : cost))) {
+				held.shrink(1);
+				return InteractionResult.sidedSuccess(false);
+			}
+			MaterialPolicy.refund(res);
+			return InteractionResult.FAIL;
+		}
+
 		InteractionResult result = super.place(context);
 		if (!result.consumesAction()) {
 			MaterialPolicy.refund(res);

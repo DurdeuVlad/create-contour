@@ -47,8 +47,11 @@ public class ContourBytePanelBlock extends ContourBlock {
 
 	/** Quadrant order: 0 lower-left, 1 lower-right, 2 upper-left, 3 upper-right (viewed on the face). */
 	public static List<float[]> boxesFor(BlockState state) {
-		Direction f = state.getValue(FACING);
-		int q = state.getValue(QUADRANT);
+		return boxesFor(state.getValue(FACING), state.getValue(QUADRANT));
+	}
+
+	/** Same geometry by (mount face, quadrant) - used for BE extras too. */
+	public static List<float[]> boxesFor(Direction f, int q) {
 		boolean hiU = (q & 2) != 0, hiV = (q & 1) != 0;
 		return List.of(switch (f) {
 			case DOWN -> new float[]{hiU ? 8 : 0, 0, hiV ? 8 : 0,
@@ -72,6 +75,11 @@ public class ContourBytePanelBlock extends ContourBlock {
 		VoxelShape s = Shapes.empty();
 		for (float[] b : boxesFor(state))
 			s = Shapes.or(s, Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
+		if (level.getBlockEntity(pos) instanceof ContourBlockEntity be)
+			for (ContourBlockEntity.PanelOccupant occ : be.getPanelOccupants())
+				for (float[] b : PanelSlots.occupantBoxes(occ.slot(), occ.kind()))
+					s = Shapes.or(s,
+						Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
 		return s;
 	}
 
@@ -80,22 +88,34 @@ public class ContourBytePanelBlock extends ContourBlock {
 		return true;
 	}
 
+	/**
+	 * Merge eligibility: a panel-family item clicked onto this cell may
+	 * replace it when the incoming slot claim is disjoint. Clicked-cell
+	 * reconstruction mirrors ContourByteBlock (the getClickedPos trap).
+	 */
+	@Override
+	public boolean canBeReplaced(BlockState state, BlockPlaceContext ctx) {
+		return PanelSlots.canMergeReplace(state, ctx);
+	}
+
+	@Override
+	protected net.minecraft.world.ItemInteractionResult useItemOn(
+		net.minecraft.world.item.ItemStack stack, BlockState state,
+		net.minecraft.world.level.Level level, BlockPos pos,
+		net.minecraft.world.entity.player.Player player,
+		net.minecraft.world.InteractionHand hand,
+		net.minecraft.world.phys.BlockHitResult hit) {
+		return usePanelOccupantItemOn(stack, state, level, pos, player, hand,
+			hit);
+	}
+
 	@Override
 	public BlockState getStateForPlacement(BlockPlaceContext ctx) {
 		Direction f = ctx.getClickedFace().getOpposite();
 		Vec3 hit = ctx.getClickLocation();
 		BlockPos p = ctx.getClickedPos();
-		double hx = hit.x - p.getX(), hy = hit.y - p.getY(), hz = hit.z - p.getZ();
-		boolean hiU, hiV;
-		switch (f) {
-			case DOWN, UP -> { hiU = hx >= 0.5; hiV = hz >= 0.5; }
-			case NORTH -> { hiU = hx >= 0.5; hiV = hy >= 0.5; }
-			case SOUTH -> { hiU = hx < 0.5; hiV = hy >= 0.5; }
-			case WEST -> { hiU = hz < 0.5; hiV = hy >= 0.5; }
-			default -> { hiU = hz < 0.5; hiV = hy >= 0.5; }
-		}
 		return withWater(defaultBlockState().setValue(FACING, f)
-			.setValue(QUADRANT, (hiU ? 2 : 0) | (hiV ? 1 : 0)), ctx);
+			.setValue(QUADRANT, PanelSlots.quadrantAt(f, hit, p)), ctx);
 	}
 
 	@Override
@@ -111,7 +131,19 @@ public class ContourBytePanelBlock extends ContourBlock {
 
 	@Override
 	protected BlockState wrenchTarget(BlockState state, ContourBlockEntity be) {
-		return state.cycle(QUADRANT);
+		// Occupant #0 cycles to the next FREE quadrant on its face -
+		// landing on an extra occupant's slot would collapse two units.
+		if (be == null)
+			return state.cycle(QUADRANT);
+		java.util.Set<Integer> occupied = be.occupiedPanelSlots();
+		int face = state.getValue(FACING).ordinal() * 4;
+		int q = state.getValue(QUADRANT);
+		for (int i = 0; i < 3; i++) {
+			q = (q + 1) & 3;
+			if (!occupied.contains(face + q))
+				return state.setValue(QUADRANT, q);
+		}
+		return state; // all other quadrants occupied
 	}
 
 	@Override

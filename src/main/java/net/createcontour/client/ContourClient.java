@@ -269,11 +269,11 @@ public final class ContourClient {
 			net.createcontour.block.ContourBeamBlock::boxesFor,
 			ContourRegistries.CONTOUR_BEAM);
 	private static final ModelFactory HALF_PANEL =
-		(o, s, m) -> new ContourBoxModel(o, s, m,
+		(o, s, m) -> new ContourMultipartModel(o, s, m,
 			net.createcontour.block.ContourHalfPanelBlock::boxesFor,
 			ContourRegistries.CONTOUR_HALF_PANEL);
 	private static final ModelFactory FLAT_PANE =
-		(o, s, m) -> new ContourBoxModel(o, s, m,
+		(o, s, m) -> new ContourMultipartModel(o, s, m,
 			net.createcontour.block.ContourFlatPaneBlock::boxesFor,
 			ContourRegistries.CONTOUR_FLAT_PANE);
 	private static final ModelFactory CORNER_SLICE =
@@ -281,7 +281,7 @@ public final class ContourClient {
 			net.createcontour.block.ContourCornerSliceBlock::boxesFor,
 			ContourRegistries.CONTOUR_CORNER_SLICE);
 	private static final ModelFactory BYTE_PANEL =
-		(o, s, m) -> new ContourBoxModel(o, s, m,
+		(o, s, m) -> new ContourMultipartModel(o, s, m,
 			net.createcontour.block.ContourBytePanelBlock::boxesFor,
 			ContourRegistries.CONTOUR_BYTE_PANEL);
 	private static final ModelFactory HALF_LAYER =
