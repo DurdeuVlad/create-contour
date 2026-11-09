@@ -50,6 +50,10 @@ public class ContourByteModel extends ContourModel {
 		for (ByteExtra e : extras) {
 			ContourByteBlock.Octant o =
 				ContourByteBlock.Octant.values()[e.octant()];
+			// absolute octant coordinates -> the occupant's faces anchor
+			// UVs to its own cell position, the same cell-grid rule the
+			// base occupant gets via boxesFor (ADR-017 texture
+			// continuation across multi-occupant cells)
 			float x0 = o.x * 8f, y0 = o.y * 8f, z0 = o.z * 8f;
 			quads.addAll(ShapeQuads.emitBoxes(
 				List.of(new float[]{x0, y0, z0, x0 + 8, y0 + 8, z0 + 8}),

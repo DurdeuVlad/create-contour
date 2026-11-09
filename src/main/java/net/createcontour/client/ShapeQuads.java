@@ -16,6 +16,21 @@ import org.joml.Vector3f;
  * set scaled to pixels only where MC expects. Corners are emitted in a
  * proper cyclic loop per face (verified outward normals), so no bowtie.
  *
+ * UV anchoring (ADR-017 texture continuation, issue 9 audit): every
+ * emitted vertex UV is the source material quad's affine position->UV
+ * map evaluated at the vertex's ABSOLUTE position on the block's 16x16
+ * face plane - never face-local 0..1. A face covering pixel rect
+ * [u0,u1]x[v0,v1] samples exactly the sprite region a full block's face
+ * shows at that sub-rect, so painted material continues across cells and
+ * block boundaries exactly the way vanilla neighbors do (block-local
+ * anchoring equals world-anchored mod 16; the atlas region cannot be
+ * sampled past the sprite anyway). Diagonal/curved interior quads are
+ * anchored by projection onto their dominant axis plane; where the
+ * dominant axis changes across a seam the projections differ - those
+ * are the inherent lattice-diagonal seams ADR-017 documents, not
+ * defects. This contract holds for every emitter below because they all
+ * pass absolute pixel corners into emitFace; new emitters must keep it.
+ *
  * Cull partition: faces lying ON the block boundary plane (0/16) go into
  * that direction's cullface list; inset exposed faces (interior cut
  * planes) go into the null-direction list. Each exposed face is emitted
@@ -70,7 +85,13 @@ final class ShapeQuads {
 		return new SrcQuad(sprite, -1, true, lx, ly, u, v);
 	}
 
-	/** Evaluate the source quad's affine map at a face-local point (0..1). */
+	/**
+	 * Evaluate the source quad's affine map at a face-plane point (0..1).
+	 * `px`/`py` are ABSOLUTE positions on the block's face plane, so the
+	 * result is the texel the material's own face shows at that spot -
+	 * this is the cell-grid UV anchor; callers must not pass box-local
+	 * coordinates.
+	 */
 	private static float[] evalUV(SrcQuad s, float px, float py) {
 		for (int a = 0; a < 4; a++)
 			for (int b = 0; b < 4; b++) {
@@ -136,7 +157,10 @@ final class ShapeQuads {
 			corners = new Vector3f[]{corners[3], corners[2], corners[1], corners[0]};
 		int[] verts = new int[4 * STRIDE];
 		for (int v = 0; v < 4; v++) {
-			// corners are PIXELS 0..16; texture projection needs 0..1
+			// corners are ABSOLUTE PIXELS 0..16 on the block face plane;
+			// texture projection needs 0..1 - dividing by 16 yields the
+			// cell-grid anchor (never renormalize to the quad's own
+			// bounds, that would give every sub-face the whole texture)
 			float lx = projX(d, corners[v]) / 16f;
 			float ly = projY(d, corners[v]) / 16f;
 			float[] uv = evalUV(src, lx, ly);

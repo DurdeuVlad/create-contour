@@ -71,6 +71,13 @@ public abstract class ContourModel extends CopycatModel {
 		return ShapeQuads.boxesForMask(maskFor(state));
 	}
 
+	/**
+	 * Emit the shape's quads for `side`. UV anchoring is supplied by
+	 * ShapeQuads.emitFace: `boxesFor` boxes and `extraQuads` corners are
+	 * absolute pixel coordinates on the block's 16x16 face plane, so each
+	 * vertex samples the material sprite at its cell-grid position
+	 * (ADR-017 texture continuation) - never face-local 0..1.
+	 */
 	protected List<BakedQuad> emitShape(BlockState state, @Nullable Direction side,
 		java.util.function.Function<Direction, List<ShapeQuads.SrcQuad>> srcFor) {
 		List<BakedQuad> out = new ArrayList<>(
