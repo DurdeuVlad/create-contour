@@ -41,3 +41,4 @@ docs/evidence/screenshots/
 docs/evidence/logs/
 !docs/evidence/manifest.md
 run-gametest/
+.worktrees/
