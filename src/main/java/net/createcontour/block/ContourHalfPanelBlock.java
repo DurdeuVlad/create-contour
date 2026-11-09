@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -46,8 +47,11 @@ public class ContourHalfPanelBlock extends ContourBlock {
 	 * direction's axis carries 0..8 or 8..16, the third axis runs full.
 	 */
 	public static List<float[]> boxesFor(BlockState state) {
-		Direction face = state.getValue(FACE);
-		Direction half = state.getValue(HALF);
+		return boxesFor(state.getValue(FACE), state.getValue(HALF));
+	}
+
+	/** Same geometry by (mount face, half direction) - for BE extras. */
+	public static List<float[]> boxesFor(Direction face, Direction half) {
 		int n = face.getAxis().ordinal();
 		boolean pos = face.getAxisDirection() == Direction.AxisDirection.POSITIVE;
 		int h = half.getAxis().ordinal();
@@ -66,12 +70,34 @@ public class ContourHalfPanelBlock extends ContourBlock {
 		VoxelShape s = Shapes.empty();
 		for (float[] b : boxesFor(state))
 			s = Shapes.or(s, Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
+		if (level.getBlockEntity(pos) instanceof ContourBlockEntity be)
+			for (ContourBlockEntity.PanelOccupant occ : be.getPanelOccupants())
+				for (float[] b : PanelSlots.occupantBoxes(occ.slot(), occ.kind()))
+					s = Shapes.or(s,
+						Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
 		return s;
 	}
 
 	@Override
 	public boolean useShapeForLightOcclusion(BlockState state) {
 		return true;
+	}
+
+	/** Merge eligibility: family item + disjoint slot claim (PanelSlots). */
+	@Override
+	public boolean canBeReplaced(BlockState state, BlockPlaceContext ctx) {
+		return PanelSlots.canMergeReplace(state, ctx);
+	}
+
+	@Override
+	protected net.minecraft.world.ItemInteractionResult useItemOn(
+		net.minecraft.world.item.ItemStack stack, BlockState state,
+		net.minecraft.world.level.Level level, BlockPos pos,
+		net.minecraft.world.entity.player.Player player,
+		net.minecraft.world.InteractionHand hand,
+		net.minecraft.world.phys.BlockHitResult hit) {
+		return usePanelOccupantItemOn(stack, state, level, pos, player, hand,
+			hit);
 	}
 
 	/**
@@ -82,22 +108,29 @@ public class ContourHalfPanelBlock extends ContourBlock {
 	@Override
 	public BlockState getStateForPlacement(BlockPlaceContext ctx) {
 		Direction face = ctx.getClickedFace();
-		double dx = ctx.getClickLocation().x - ctx.getClickedPos().getX() - 0.5;
-		double dy = ctx.getClickLocation().y - ctx.getClickedPos().getY() - 0.5;
-		double dz = ctx.getClickLocation().z - ctx.getClickedPos().getZ() - 0.5;
+		Direction half = halfDirAt(face, ctx.getClickLocation(),
+			ctx.getClickedPos());
+		return withWater(defaultBlockState().setValue(FACE, face)
+			.setValue(HALF, half), ctx);
+	}
+
+	/**
+	 * Which perpendicular half of `face` an in-cell hit selects: the
+	 * dominant off-centre in-face axis of the click, as in placement.
+	 */
+	public static Direction halfDirAt(Direction face, Vec3 hit, BlockPos cell) {
+		double dx = hit.x - cell.getX() - 0.5;
+		double dy = hit.y - cell.getY() - 0.5;
+		double dz = hit.z - cell.getZ() - 0.5;
 		double u, v;
 		switch (face.getAxis()) {
 			case Z -> { u = dy; v = dx; }
 			case X -> { u = dy; v = dz; }
 			default -> { u = dx; v = dz; }
 		}
-		Direction half;
 		if (Math.abs(u) >= Math.abs(v))
-			half = u >= 0 ? perpPlus(face, 0) : perpMinus(face, 0);
-		else
-			half = v >= 0 ? perpPlus(face, 1) : perpMinus(face, 1);
-		return withWater(defaultBlockState().setValue(FACE, face)
-			.setValue(HALF, half), ctx);
+			return u >= 0 ? perpPlus(face, 0) : perpMinus(face, 0);
+		return v >= 0 ? perpPlus(face, 1) : perpMinus(face, 1);
 	}
 
 	private static Direction perpPlus(Direction face, int which) {
@@ -132,7 +165,27 @@ public class ContourHalfPanelBlock extends ContourBlock {
 
 	@Override
 	protected BlockState wrenchTarget(BlockState state, ContourBlockEntity be) {
-		return state.cycle(HALF);
+		// Occupant #0 cycles perpendicular halves only, skipping pairs
+		// claimed by extra occupants (also avoids face-parallel halves,
+		// which produce degenerate geometry).
+		if (be == null)
+			return state.cycle(HALF);
+		java.util.Set<Integer> occupied = be.occupiedPanelSlots();
+		Direction face = state.getValue(FACE);
+		Direction half = state.getValue(HALF);
+		for (int i = 0; i < 5; i++) {
+			half = Direction.values()[(half.ordinal() + 1) % 6];
+			if (half.getAxis() == face.getAxis())
+				continue; // not a legal half for this face
+			int hid = PanelSlots.halfIdFor(face, half);
+			if (hid < 0)
+				continue;
+			if (java.util.Collections.disjoint(occupied,
+				PanelSlots.slots(PanelSlots.id(face, hid),
+					PanelSlots.KIND_HALF_PANEL)))
+				return state.setValue(HALF, half);
+		}
+		return state;
 	}
 
 	@Override
