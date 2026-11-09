@@ -757,7 +757,7 @@ public final class ContourClient {
 				|| Minecraft.getInstance().level == null
 				|| Minecraft.getInstance().player == null)
 				return;
-			if (visualStage > 0 && visualStage < 8) {
+			if (visualStage > 0 && visualStage < GALLERY_LAST_STAGE) {
 				if (++visualTicks > (visualStage == 1 ? 60 : 30)) {
 					visualTicks = 0;
 					visualStage++;
@@ -794,12 +794,28 @@ public final class ContourClient {
 						com.mojang.logging.LogUtils.getLogger()
 							.info("[contour-smoke] visual captures done");
 					}
+					case 9 -> {
+						buildContinuationGallery(Minecraft.getInstance());
+						frameGallery(0);
+					}
+					case 10, 11, 12, 13, 14, 15, 16 -> {
+						int shot = visualStage - GALLERY_SHOT_STAGE;
+						if (shot < GALLERY_NAMES.length) {
+							grab("continuum-" + GALLERY_NAMES[shot]);
+							if (shot + 1 < GALLERY_NAMES.length)
+								frameGallery(shot + 1);
+							else
+								com.mojang.logging.LogUtils.getLogger().info(
+									"[contour-smoke] continuation gallery done groups={}",
+									GALLERY_NAMES.length);
+						}
+					}
 					default -> {
 					}
 				}
 				return;
 			}
-			if (visualStage >= 8 && ponderOpenStage >= 0) {
+			if (visualStage >= GALLERY_LAST_STAGE && ponderOpenStage >= 0) {
 				ponderOpen(com.mojang.logging.LogUtils.getLogger());
 				return;
 			}
@@ -885,6 +901,55 @@ public final class ContourClient {
 		}
 
 	private static int visualStage, visualTicks;
+
+	// Continuation gallery (ADR-017): the stage chain is explicit and
+	// sequential - stages 1..8 are the wave-visual captures, stage 9
+	// builds the gallery and frames group 0, stages 10..16 grab
+	// "continuum-<name>" once per mate-pair group, then the ponder-open
+	// stage runs once visualStage >= GALLERY_LAST_STAGE.
+	private static final BlockPos GALLERY_BASE = new BlockPos(140, -60, 112);
+	private static final String[] GALLERY_NAMES = {
+		"slope-slab", "byte-pair", "panel-stone", "stairs-slab",
+		"round-slope", "panel-bytes", "vslab-byte"};
+	private static final int GALLERY_SHOT_STAGE = 10;
+	private static final int GALLERY_LAST_STAGE =
+		GALLERY_SHOT_STAGE + GALLERY_NAMES.length - 1;
+
+	/** Frames mate-pair group i: SSE of the pair, looking north-west.
+	 *  The feet y is just above the gallery floor so the shot works
+	 *  whether the player lands or hovers. */
+	private static void frameGallery(int i) {
+		moveCam(GALLERY_BASE.getX() + i * 4 + 2.0,
+			GALLERY_BASE.getY() + 1.0, GALLERY_BASE.getZ() + 5.0,
+			160f, 15f);
+	}
+
+	/** Air-clear then place: a persisted identical blockstate would
+	 *  early-return and skip BE creation. */
+	private static void put(net.minecraft.world.level.Level level,
+		BlockPos pos, BlockState s) {
+		level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+		level.setBlock(pos, s, 3);
+	}
+
+	private static ContourBlockEntity cbeAt(
+		net.minecraft.world.level.Level level, BlockPos pos) {
+		var be = level.getChunkAt(pos) instanceof
+			net.minecraft.world.level.chunk.LevelChunk lc
+			? lc.getBlockEntity(pos,
+				net.minecraft.world.level.chunk.LevelChunk.EntityCreationType.IMMEDIATE)
+			: level.getBlockEntity(pos);
+		return be instanceof ContourBlockEntity cbe ? cbe : null;
+	}
+
+	/** Paint a placed shape; facing/top mirror what setPlacedBy would
+	 *  store as the canonical orientation for that state. */
+	private static void paintAt(net.minecraft.world.level.Level level,
+		BlockPos pos, BlockState mat, Direction facing, boolean top) {
+		var cbe = cbeAt(level, pos);
+		if (cbe != null)
+			cbe.applyPayload(mat, 1, facing, top);
+	}
 
 	private static void moveCam(double x, double y, double z, float yaw,
 		float pitch) {
@@ -1106,6 +1171,153 @@ public final class ContourClient {
 		moveCam(110.5, -50.0, 172.0, 180f, 20f);
 		com.mojang.logging.LogUtils.getLogger()
 			.info("[contour-smoke] visual scene built at {}", base);
+	}
+
+	/** ADR-017 continuation gallery: a row of mate-pair groups east of
+	 *  the catalog scene (x >= 140 stays clear of the platform ending
+	 *  near x = 127 and the sync fixture at x = 109). Each group is
+	 *  painted a single material so the rendered pair should read as
+	 *  one continuous surface - the shots are the acceptance evidence. */
+	private static void buildContinuationGallery(Minecraft mc) {
+		var server = mc.getSingleplayerServer();
+		if (server == null)
+			return;
+		var level = server.overworld();
+		var stone = Blocks.STONE.defaultBlockState();
+		var planks = Blocks.OAK_PLANKS.defaultBlockState();
+		var casing = net.minecraft.core.registries.BuiltInRegistries.BLOCK
+			.get(ResourceLocation.fromNamespaceAndPath("create",
+				"andesite_casing")).defaultBlockState();
+		var bricks = Blocks.BRICKS.defaultBlockState();
+		var concrete = Blocks.WHITE_CONCRETE.defaultBlockState();
+		// clean stage + stone floor under the whole row
+		for (int x = -2; x <= GALLERY_NAMES.length * 4 + 1; x++)
+			for (int z = -2; z <= 5; z++) {
+				level.setBlock(GALLERY_BASE.offset(x, -1, z), stone, 3);
+				for (int y = 0; y <= 3; y++)
+					level.setBlock(GALLERY_BASE.offset(x, y, z),
+						Blocks.AIR.defaultBlockState(), 3);
+			}
+
+		// slope -> top slab: ramp tip meets the slab's upper ledge.
+		BlockPos g = GALLERY_BASE;
+		put(level, g, ContourRegistries.CONTOUR_SLOPE.get().defaultBlockState()
+			.setValue(net.createcontour.block.ContourSlopeBlock.FACING,
+				Direction.SOUTH)
+			.setValue(net.createcontour.block.ContourSlopeBlock.HALF,
+				net.minecraft.world.level.block.state.properties.Half.BOTTOM));
+		put(level, g.south(), ContourRegistries.CONTOUR_SLAB.get()
+			.defaultBlockState().setValue(ContourSlabBlock.TYPE,
+				net.minecraft.world.level.block.state.properties.SlabType.TOP));
+		paintAt(level, g, stone, Direction.SOUTH, false);
+		paintAt(level, g.south(), stone, Direction.NORTH, true);
+
+		// four bytes in one cell compose a bottom slab (BYTE_EXTRAS);
+		// a real bottom slab continues the same surface east.
+		g = GALLERY_BASE.offset(4, 0, 0);
+		put(level, g, ContourRegistries.CONTOUR_BYTE.get().defaultBlockState()
+			.setValue(net.createcontour.block.ContourByteBlock.OCTANT,
+				net.createcontour.block.ContourByteBlock.Octant.X0Y0Z0));
+		var byteBe = cbeAt(level, g);
+		if (byteBe != null) {
+			byteBe.applyPayload(planks, 1, Direction.NORTH, false);
+			byteBe.addByteOccupant(
+				net.createcontour.block.ContourByteBlock.Octant.X1Y0Z0.ordinal(),
+				planks, 1);
+			byteBe.addByteOccupant(
+				net.createcontour.block.ContourByteBlock.Octant.X0Y0Z1.ordinal(),
+				planks, 1);
+			byteBe.addByteOccupant(
+				net.createcontour.block.ContourByteBlock.Octant.X1Y0Z1.ordinal(),
+				planks, 1);
+		}
+		put(level, g.east(), ContourRegistries.CONTOUR_SLAB.get()
+			.defaultBlockState().setValue(ContourSlabBlock.TYPE,
+				net.minecraft.world.level.block.state.properties.SlabType.BOTTOM));
+		paintAt(level, g.east(), planks, Direction.NORTH, false);
+
+		// face panel -> vanilla block: coplanar tops across the
+		// Contour<->vanilla seam.
+		g = GALLERY_BASE.offset(8, 0, 0);
+		put(level, g, ContourRegistries.CONTOUR_PANEL.get().defaultBlockState()
+			.setValue(net.createcontour.block.ContourPanelBlock.POSITION,
+				net.createcontour.block.ContourPanelBlock.PanelPos.FACE_UP));
+		put(level, g.east(), stone);
+		paintAt(level, g, stone, Direction.NORTH, false);
+
+		// stairs -> top slab: the upper step continues into a landing.
+		g = GALLERY_BASE.offset(12, 0, 0);
+		put(level, g, ContourRegistries.CONTOUR_STAIRS.get().defaultBlockState()
+			.setValue(ContourStairsBlock.FACING, Direction.SOUTH)
+			.setValue(ContourStairsBlock.HALF,
+				net.minecraft.world.level.block.state.properties.Half.BOTTOM)
+			.setValue(ContourStairsBlock.STAIRS_SHAPE,
+				net.minecraft.world.level.block.state.properties.StairsShape.STRAIGHT));
+		put(level, g.south(), ContourRegistries.CONTOUR_SLAB.get()
+			.defaultBlockState().setValue(ContourSlabBlock.TYPE,
+				net.minecraft.world.level.block.state.properties.SlabType.TOP));
+		paintAt(level, g, casing, Direction.SOUTH, false);
+		paintAt(level, g.south(), casing, Direction.NORTH, true);
+
+		// slope -> quarter round: the ramp runs into the lathe form's
+		// solid cap face (round wraps the up+north edge at the seam).
+		g = GALLERY_BASE.offset(16, 0, 0);
+		put(level, g, ContourRegistries.CONTOUR_SLOPE.get().defaultBlockState()
+			.setValue(net.createcontour.block.ContourSlopeBlock.FACING,
+				Direction.SOUTH)
+			.setValue(net.createcontour.block.ContourSlopeBlock.HALF,
+				net.minecraft.world.level.block.state.properties.Half.BOTTOM));
+		put(level, g.south(), ContourRegistries.CONTOUR_QUARTER_ROUND.get()
+			.defaultBlockState()
+			.setValue(net.createcontour.block.ContourQuarterRoundBlock.EDGE,
+				net.createcontour.block.ContourTrimBlock.Edge.UN));
+		paintAt(level, g, bricks, Direction.SOUTH, false);
+		paintAt(level, g.south(), bricks, Direction.NORTH, false);
+
+		// half panel -> byte panel on the same top plane: the half-face
+		// plate continues into a face quadrant across the boundary.
+		g = GALLERY_BASE.offset(20, 0, 0);
+		put(level, g, ContourRegistries.CONTOUR_HALF_PANEL.get()
+			.defaultBlockState()
+			.setValue(net.createcontour.block.ContourHalfPanelBlock.FACE,
+				Direction.UP)
+			.setValue(net.createcontour.block.ContourHalfPanelBlock.HALF,
+				Direction.SOUTH));
+		put(level, g.south(), ContourRegistries.CONTOUR_BYTE_PANEL.get()
+			.defaultBlockState()
+			.setValue(net.createcontour.block.ContourBytePanelBlock.FACING,
+				Direction.UP)
+			.setValue(net.createcontour.block.ContourBytePanelBlock.QUADRANT, 0));
+		paintAt(level, g, concrete, Direction.NORTH, false);
+		paintAt(level, g.south(), concrete, Direction.NORTH, false);
+
+		// vertical slab -> byte column: four bytes continue the
+		// half-wall one cell further (BYTE_EXTRAS a second time).
+		g = GALLERY_BASE.offset(24, 0, 0);
+		put(level, g, ContourRegistries.CONTOUR_VERTICAL_SLAB.get()
+			.defaultBlockState().setValue(ContourVerticalSlabBlock.FACING,
+				Direction.SOUTH));
+		put(level, g.south(), ContourRegistries.CONTOUR_BYTE.get()
+			.defaultBlockState()
+			.setValue(net.createcontour.block.ContourByteBlock.OCTANT,
+				net.createcontour.block.ContourByteBlock.Octant.X0Y0Z0));
+		var wallBe = cbeAt(level, g.south());
+		if (wallBe != null) {
+			wallBe.applyPayload(casing, 1, Direction.NORTH, false);
+			wallBe.addByteOccupant(
+				net.createcontour.block.ContourByteBlock.Octant.X1Y0Z0.ordinal(),
+				casing, 1);
+			wallBe.addByteOccupant(
+				net.createcontour.block.ContourByteBlock.Octant.X0Y1Z0.ordinal(),
+				casing, 1);
+			wallBe.addByteOccupant(
+				net.createcontour.block.ContourByteBlock.Octant.X1Y1Z0.ordinal(),
+				casing, 1);
+		}
+		paintAt(level, g, casing, Direction.SOUTH, false);
+		com.mojang.logging.LogUtils.getLogger().info(
+			"[contour-smoke] continuation gallery built at {} groups={}",
+			GALLERY_BASE, GALLERY_NAMES.length);
 	}
 
 		private static int passed, failed;
