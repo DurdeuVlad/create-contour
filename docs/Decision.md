@@ -97,7 +97,12 @@ until the owner approves them.
 
 ## ADR-007: Local private planning; publication undecided
 
-- Status: accepted. Date: 2026-11-02.
+- Status: accepted. Date: 2026-11-02. Update: superseded in practice - the
+  repository is public and 0.1.0-alpha was published on 2026-11-06. The text
+  below is the original decision, kept for history. Releases, tags and
+  platform uploads still require explicit owner authorization each time
+  (AGENTS.md), and the ADR-001 name re-checks still apply, including the
+  CurseForge check that returned HTTP 403.
 - Context: the owner wants a local repo and a plan in issues/milestones; no
   external records were authorized.
 - Decision: repository stays local and private; no remotes, commits (beyond
@@ -256,7 +261,7 @@ until the owner approves them.
   issues are `draft`/`dependency-blocked`, none authorize starting
   shape 4.
 
-## ADR-014: Owner-lifted shape gate and the AABB-box shape architecture
+## ADR-014a: Owner-lifted shape gate and the AABB-box shape architecture
 
 - Status: accepted (implementation authority: owner instruction
   "implement all the shapes of blocks that a builder might ever need",

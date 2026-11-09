@@ -49,8 +49,13 @@ contraptions and builds can take any shape in any material.
   (`.cache` QA logs recorded in `docs/Testing.md`).
 - `runClientQA` render smoke: **318,503 checks / 0 failed** across the full
   114-shape catalog and material matrix.
-- 286-mod Rustic-Craft-2-class pack: dedicated server `Done` boot and client
-  world join both pass with the release jar.
+- 286-mod Rustic-Craft-2-class pack (isolated copy): the dedicated server
+  reached `Done` and a test client joined, recorded for `0.1.0` in
+  `docs/evidence/Pack-Diagnostic-Assessment.md`. The client only started with
+  the diagnostic flag `-Dcustomskinloader.ignorePatchFailure=true`: the strict
+  full-pack client baseline is blocked by a CustomSkinLoader crash that
+  happens before Contour is installed. This is a diagnostic observation, not
+  a strict pack-compatibility pass.
 
 Not yet exercised end-to-end: multiplayer two-client sync, train
 contraption journeys, in-client Ponder playback, and a real schematicannon
@@ -58,7 +63,7 @@ run - tracked in `docs/Testing.md` (marked `NOT RUN`, not claimed).
 
 ## Roadmap
 
-All geometrically boundable shapes ship in `0.2.0-alpha`. Remaining
+All geometrically boundable shapes ship since `0.2.0-alpha`. Remaining
 documented families: true multipart plates (multiple painted occupants per
 cell, ADR-016) and kinetic/fluid disguises - see
 [docs/issues/13-deferred-families.md](docs/issues/13-deferred-families.md).
@@ -69,6 +74,15 @@ cell, ADR-016) and kinetic/fluid disguises - see
 - `docs/Architecture.md` / `docs/Testing.md` - internals and evidence model
 - `docs/issues/` - per-issue contracts with acceptance criteria
 - `docs/publishing/curseforge-page.md` - CurseForge publishing package
+
+## AI disclosure
+
+Create: Contour is developed with heavy AI assistance. The owner
+(DurdeuVlad) sets the direction and makes the design decisions recorded in
+`docs/Decision.md`; most of the code, tests and documentation are written by
+AI coding agents working under the rules in `AGENTS.md`. What has and has not
+been verified is stated in `docs/Testing.md`; anything not run is marked
+`NOT RUN`.
 
 ## Contributing & license
 

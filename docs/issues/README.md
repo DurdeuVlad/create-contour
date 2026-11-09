@@ -41,7 +41,7 @@ proposed pending owner approval.
                                             may run after 07 parallel
                                             to 10; NOT gate-blocked)
 
-14/15/16 sit under M3. ADR-014 lifted the implementation gate per
+14/15/16 sit under M3. ADR-014a lifted the implementation gate per
 owner directive; issue-09/issue-13 pack verification remains owed on
 ALL shipped shapes before compatibility claims.
 depending on 07 only, not on the 09 gate.

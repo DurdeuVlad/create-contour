@@ -44,6 +44,10 @@ door, folding door and many more architectural forms.
 
 **Requirements**: Minecraft 1.21.1, NeoForge 21.1.x, Create 6.0.x.
 
+**AI disclosure**: this mod is developed with heavy AI assistance. The owner
+sets direction and decisions; most code, tests and documentation are written
+by AI coding agents. See the README for details.
+
 *Alpha: all 114 shapes and QoL systems are implemented and tested
 (144/144 GameTests, 318k+ render checks). True multipart plates and
 kinetic/fluid disguises are on the roadmap.*
@@ -70,6 +74,10 @@ kinetic/fluid disguises are on the roadmap.*
 
 ## Owner checklist (cannot be automated)
 
+0. Before publishing: re-check the project name on CurseForge (ADR-001,
+   direct check returned HTTP 403) and set the platform's AI-content
+   disclosure/tag wherever the platform offers one (Modrinth:
+   "Contains AI-generated content").
 1. Create the CurseForge project (name/avatar/categories/license=MIT).
 2. Set the GitHub source + issues links.
 3. Paste the project description above.

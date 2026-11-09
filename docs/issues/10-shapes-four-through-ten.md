@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | in-progress (implementation gate lifted by owner, ADR-014; shipped: contour_layers, contour_post, contour_byte, contour_wall, contour_pane, contour_fence, contour_slope, contour_trapdoor, contour_ladder + issue-14 contour_panel; remaining listed shapes and pack verification still owed) |
+| Status | in-progress (implementation gate lifted by owner, ADR-014a; shipped: contour_layers, contour_post, contour_byte, contour_wall, contour_pane, contour_fence, contour_slope, contour_trapdoor, contour_ladder + issue-14 contour_panel; remaining listed shapes and pack verification still owed) |
 | Milestone | M3 |
 | Type | feature |
 | Suggested labels | `shape`, `expansion` |

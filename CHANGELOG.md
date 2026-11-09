@@ -3,6 +3,32 @@
 All notable changes to Create: Contour will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Documentation
+
+- Added an AI disclosure to the README.
+- Reconciled stale statements: the repository is public (not "local,
+  private"), ADR numbering is unique, and the pack-test claim now states that
+  it was a diagnostic-profile observation.
+
+## [0.2.1-alpha]
+
+Per-release notes between 0.1.0-alpha and 0.2.1-alpha were not recorded when
+those versions were cut. This entry lists only what the repository documents
+today.
+
+### Status
+
+- Catalog: 114 paintable shapes (README, `docs/publishing/curseforge-page.md`);
+  0.1.0-alpha listed 106.
+- Verification as recorded in README.md and docs/Testing.md:
+  `runGameTestServer` 144/144 required tests, `runClientQA` 318,503 checks /
+  0 failed.
+- Not yet exercised end-to-end: multiplayer two-client sync, train
+  contraption journeys, in-client Ponder playback, a real schematicannon run.
+- Open roadmap: true multipart plates (ADR-016) and kinetic/fluid disguises.
+
 ## [0.1.0-alpha] - 2026-11-06
 
 First public alpha. Private prototype; play-testing and API feedback welcome -
@@ -55,7 +81,10 @@ recipes, ledger rules, and shape set may still change.
   materials, item models, and grid masks (`.cache/client_qa89.log`).
 - Ponder scenes register cleanly in-client.
 
-## [Unreleased]
+## Pre-0.1.0 prototype history (historical)
+
+The entries below describe the private prototype that preceded 0.1.0-alpha.
+They are kept for the record and do not describe the current release.
 
 ### Added (prototype - private, NOT for installation)
 

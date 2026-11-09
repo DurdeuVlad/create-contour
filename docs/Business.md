@@ -5,7 +5,7 @@ Status: draft (local planning). Owner: project owner (unassigned for issues).
 ## Classification
 
 - Ownership: single-developer.
-- Visibility: private, local repository. Future visibility undecided.
+- Visibility: public GitHub repository (public alpha since 2026-11-06).
 - License intent: MIT (`LICENSE`). This is an intent statement, not an
   authorization to publish or host publicly.
 
@@ -144,5 +144,6 @@ dependencies; JEI is a soft/optional integration only.
 
 - Multi-loader support (NeoForge only; Architectury rejected, ADR-002).
 - Guaranteeing support for every modded block's dynamic visuals.
-- Any publication, distribution, or public issue tracker (undecided).
+- Publishing any release or platform upload without explicit owner
+  authorization (each release is an owner decision).
 - Gameplay content unrelated to copycat shapes (no new machines, no worldgen).

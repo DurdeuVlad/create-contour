@@ -5,8 +5,9 @@ ADRs; this file is the fast contract.
 
 ## Authority gate
 
-- This is a **local, private, single-owner repository**. Publication is
-  undecided.
+- This is a **single-owner repository**. It is public on GitHub (public since
+  0.1.0-alpha, 2026-11-06; see ADR-007 update). Releases, tags and platform
+  uploads still need explicit owner authorization each time.
 - Never commit, push, tag, create remotes, create GitHub issues/PRs/releases,
   publish artifacts, or perform any outward or destructive action without
   explicit owner authorization.
@@ -52,10 +53,11 @@ ADRs; this file is the fast contract.
   `UNSUPPORTED`, not "should work".
 - Never fabricate jar contents, version availability, screenshots, or logs.
 - Record the evidence file or log path alongside each claimed result.
-- Current stage: private three-shape prototype and isolated pack-test
-  preparation. Only the precise checks in `docs/evidence/manifest.md`
-  have executed. Full-pack, train, schematic and multiplayer acceptance
-  remains `NOT RUN` until corresponding evidence is recorded.
+- Current stage: public alpha (0.2.1-alpha). Only the checks recorded in
+  `docs/evidence/manifest.md` and `docs/Testing.md` have executed. Pack-level
+  results are diagnostic-profile observations (ADR-012), not a strict pass.
+  Train, schematic and multiplayer acceptance remain `NOT RUN` until
+  corresponding evidence is recorded.
 
 ## Documentation contract
 
