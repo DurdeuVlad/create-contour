@@ -121,5 +121,6 @@
   "block.create_contour.contour_iron_trapdoor": "Contour Iron Trapdoor",
   "block.create_contour.contour_sliding_door": "Contour Sliding Door",
   "block.create_contour.contour_folding_door": "Contour Folding Door",
-  "block.create_contour.contour_catwalk": "Contour Catwalk"
+  "block.create_contour.contour_catwalk": "Contour Catwalk",
+  "block.create_contour.contour_slope_layer": "Contour Slope Layer"
 }

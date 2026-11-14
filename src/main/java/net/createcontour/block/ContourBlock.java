@@ -276,11 +276,17 @@ public abstract class ContourBlock extends WaterloggedCopycatBlock {
 			return InteractionResult.sidedSuccess(true); // client never mutates
 		if (!(level.getBlockEntity(pos) instanceof ContourBlockEntity be) || be.isFrozen())
 			return InteractionResult.PASS;
-		if (hostUnits(state) > 1)
-			return InteractionResult.FAIL; // doubled shapes never cycle
 		BlockState newState = wrenchTarget(state, be);
 		if (newState == null)
 			return InteractionResult.PASS;
+		// Doubled shapes never cycle across blocks or unit counts - the
+		// per-unit ledger cap would change under the payload. Same-block
+		// unit-preserving cycles (issue #21: facing rotation at a fixed
+		// slope-layer SIZE) keep the cap and stay legal.
+		if (hostUnits(state) > 1
+			&& (newState.getBlock() != state.getBlock()
+				|| hostUnits(newState) != hostUnits(state)))
+			return InteractionResult.FAIL;
 		// Atomic: snapshot the full serialized BE, setBlock, copy into the
 		// new BE; rollback restores block AND owned fields.
 		CompoundTag snap = be.saveWithFullMetadata(level.registryAccess());

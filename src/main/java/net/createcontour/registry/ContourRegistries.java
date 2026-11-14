@@ -57,6 +57,7 @@ import net.createcontour.block.ContourScaffoldBlock;
 import net.createcontour.block.ContourSlabBlock;
 import net.createcontour.block.ContourSliceBlock;
 import net.createcontour.block.ContourSlopeBlock;
+import net.createcontour.block.ContourSlopeLayerBlock;
 import net.createcontour.block.ContourStairsBlock;
 import net.createcontour.block.ContourTorchBlock;
 import net.createcontour.block.ContourTrapdoorBlock;
@@ -454,6 +455,10 @@ public final class ContourRegistries {
 		BLOCKS.register("contour_catwalk",
 			() -> new ContourCatwalkBlock(shapeProps()));
 
+	public static final DeferredBlock<ContourSlopeLayerBlock> CONTOUR_SLOPE_LAYER =
+		BLOCKS.register("contour_slope_layer",
+			() -> new ContourSlopeLayerBlock(shapeProps()));
+
 	public static final DeferredItem<ContourBlockItem> CONTOUR_SLAB_ITEM =
 		ITEMS.register("contour_slab", () -> new ContourBlockItem(CONTOUR_SLAB.get()));
 	public static final DeferredItem<ContourBlockItem> CONTOUR_VERTICAL_SLAB_ITEM =
@@ -779,6 +784,10 @@ public final class ContourRegistries {
 		ITEMS.register("contour_catwalk",
 			() -> new ContourBlockItem(CONTOUR_CATWALK.get()));
 
+	public static final DeferredItem<ContourBlockItem> CONTOUR_SLOPE_LAYER_ITEM =
+		ITEMS.register("contour_slope_layer",
+			() -> new ContourBlockItem(CONTOUR_SLOPE_LAYER.get()));
+
 	/**
 	 * Placer feedstock: the "basic block" the place gun consumes - a
 	 * plain neutral cube, NOT a ContourBlock (no material copying, no
@@ -849,7 +858,7 @@ public final class ContourRegistries {
 				CONTOUR_HALF_PANEL.get(), CONTOUR_FLAT_PANE.get(),
 				CONTOUR_CORNER_SLICE.get(), CONTOUR_BYTE_PANEL.get(), CONTOUR_HALF_LAYER.get(), CONTOUR_IRON_DOOR.get(), CONTOUR_IRON_TRAPDOOR.get(),
 				CONTOUR_SLIDING_DOOR.get(), CONTOUR_FOLDING_DOOR.get(),
-				CONTOUR_CATWALK.get())
+				CONTOUR_CATWALK.get(), CONTOUR_SLOPE_LAYER.get())
 			.build(null));
 
 	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ContourSignBlockEntity>> CONTOUR_SIGN_BE =
@@ -977,6 +986,7 @@ public final class ContourRegistries {
 				output.accept(CONTOUR_SLIDING_DOOR_ITEM.get());
 				output.accept(CONTOUR_FOLDING_DOOR_ITEM.get());
 				output.accept(CONTOUR_CATWALK_ITEM.get());
+				output.accept(CONTOUR_SLOPE_LAYER_ITEM.get());
 				output.accept(CONTOUR_BLANK_ITEM.get());
 				output.accept(CONTOUR_PLACER.get());
 			})

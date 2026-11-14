@@ -86,10 +86,10 @@ Compatibility rule used by the tables below:
 
 ## 3. Per-family mate tables
 
-Sixteen families cover all 114 paintable shape blocks registered in
+Sixteen families cover all 115 paintable shape blocks registered in
 `src/main/java/net/createcontour/registry/ContourRegistries.java`
-(registry-wave order inside each family). The registry holds 115
-`DeferredBlock` entries in total; the 115th, `contour_blank`, is
+(registry-wave order inside each family). The registry holds 116
+`DeferredBlock` entries in total; the 116th, `contour_blank`, is
 placer feedstock - a plain neutral cube, not a shape - and is
 therefore not in a family. "Side faces" means the four horizontal
 directions; "ends" means the two faces on a run axis.
@@ -190,11 +190,11 @@ Members: `contour_stairs`, `contour_vertical_stairs`,
 | vertical_step tread band | vertical_step side-by-side run at same facing, flat-full wall | pending render verification |
 | beam end patch | beam on the same axis (bar run), post/pillar shaft seats, flat-full | pending render verification |
 
-### 3.6 Slopes and roofs - diagonal faces (7)
+### 3.6 Slopes and roofs - diagonal faces (8)
 
 Members: `contour_slope`, `contour_half_slope`, `contour_corner_slope`,
 `contour_inner_slope`, `contour_pyramid`, `contour_ridge`,
-`contour_valley`.
+`contour_valley`, `contour_slope_layer`.
 
 | Shapes | Faces -> edge profiles |
 | --- | --- |
@@ -205,6 +205,7 @@ Members: `contour_slope`, `contour_half_slope`, `contour_corner_slope`,
 | `contour_pyramid` | all four side faces: diagonal-45 triangle; base flat-full |
 | `contour_ridge` | run ends: peaked gable profile (diagonal-45 pair); side faces: diagonal-45 ramps to the ridge line |
 | `contour_valley` | run ends: V profile (two diagonal-shallow drops to center); side faces: diagonal-shallow slopes |
+| `contour_slope_layer` | FACING face: flat band 0..2*SIZE (flat-full at SIZE=8); side faces: trapezoid = plateau top plus diagonal-45 tail (diagonal-45 triangle at SIZE=8); toe face: 2px collision lip only; DOWN: flat-full |
 
 | Source | Mate | Status |
 | --- | --- | --- |
@@ -214,6 +215,7 @@ Members: `contour_slope`, `contour_half_slope`, `contour_corner_slope`,
 | ridge gable end | ridge on the same axis (gable run), pediment stepped gable | pending render verification |
 | valley V end | valley on the same axis, gutter channel end | pending render verification |
 | inner_slope crease | corner_slope/inner_slope roof corners at matching pitch | pending render verification |
+| slope_layer trapezoid side / flat band | slope_layer stack continuing into a contour_slope at the same facing (SIZE=8 stack equals the contour_slope BOTTOM silhouette and its diagonal-45 caps; declared equivalence, block id stays distinct), flat-full at matching band height | pending render verification |
 
 ### 3.7 Mouldings and edge trims (14)
 
