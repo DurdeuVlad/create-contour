@@ -480,9 +480,9 @@ until the owner approves them.
   anchored UVs (texture) + declared mates (intent).
 - Spec surface: docs/Continuation.md (vocabulary + mate tables).
 
-## ADR-018: contour_layers SIZE semantics - per-eighth billing, top-layer wrench
+## ADR-019: contour_layers SIZE semantics - per-eighth billing, top-layer wrench
 
-- Status: accepted implementation semantics (issue #20, 2026); binding
+- Status: accepted implementation semantics (issue #20, ADR-019, 2026); binding
   on `contour_layers` only - every other shape keeps the flat
   `materialUnits = hostUnits` rule from ADR-013.
 - Context: `contour_layers` is a resizable snow-style plate (LAYERS
