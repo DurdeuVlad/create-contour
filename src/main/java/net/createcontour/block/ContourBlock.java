@@ -237,6 +237,46 @@ public abstract class ContourBlock extends WaterloggedCopycatBlock {
 	}
 
 	/**
+	 * Board-channel paint targeting (issue #24): the 1px face shell
+	 * under the hit identifies the face, and every present face has its
+	 * own occupant record. Boards have no host paint - the host material
+	 * is never rendered or charged - so a shell miss paints nothing. A
+	 * face flag without an occupant record (placer-set or malformed
+	 * NBT) is healed with a neutral record so the sheet stays paintable.
+	 */
+	protected ItemInteractionResult useBoardOccupantItemOn(ItemStack stack,
+		BlockState state, Level level, BlockPos pos, Player player,
+		InteractionHand hand, BlockHitResult hit) {
+		if (!(level.getBlockEntity(pos) instanceof ContourBlockEntity be))
+			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+		Vec3 local = hit.getLocation()
+			.subtract(Vec3.atLowerCornerOf(pos));
+		Direction f = ContourBoardBlock.faceAtLocal(state, local,
+			hit.getDirection());
+		if (f == null)
+			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+		if (level.isClientSide)
+			return getAcceptedBlockState(level, pos, stack, hit.getDirection()) != null
+				? ItemInteractionResult.sidedSuccess(true)
+				: ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+		BlockState accepted = getAcceptedBlockState(level, pos, stack,
+			hit.getDirection());
+		if (accepted == null)
+			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+		int idx = be.boardOccupantIndex(f.ordinal());
+		if (idx < 0) {
+			be.addBoardOccupant(f.ordinal(), MaterialSafety.neutral(), 0);
+			idx = be.boardOccupantIndex(f.ordinal());
+		}
+		if (idx < 0)
+			return ItemInteractionResult.FAIL; // frozen: cannot heal/paint
+		ContourBlockEntity.BoardOccupant o = be.getBoardOccupants().get(idx);
+		final int target = idx;
+		return paintExtraOccupant(accepted, player, o.material(), o.paid(),
+			(mat, paid) -> be.paintBoardOccupant(target, mat, paid));
+	}
+
+	/**
 	 * Reserve/replace/refund accounting for one extra occupant - the
 	 * same economics ContourByteBlock applies per octant: consume-on
 	 * charges one unit on material change, same-base repaint is free
@@ -389,6 +429,11 @@ public abstract class ContourBlock extends WaterloggedCopycatBlock {
 				drops.add(new ItemStack(o.material().getBlock().asItem(),
 					o.paid()));
 		for (ContourBlockEntity.PaneOccupant o : be.getPaneOccupants())
+			if (o.paid() > 0 && o.material() != null
+				&& !MaterialSafety.isNeutral(o.material()))
+				drops.add(new ItemStack(o.material().getBlock().asItem(),
+					o.paid()));
+		for (ContourBlockEntity.BoardOccupant o : be.getBoardOccupants())
 			if (o.paid() > 0 && o.material() != null
 				&& !MaterialSafety.isNeutral(o.material()))
 				drops.add(new ItemStack(o.material().getBlock().asItem(),

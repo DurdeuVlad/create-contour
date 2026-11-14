@@ -116,6 +116,7 @@
     "create_contour:contour_folding_door",
     "create_contour:contour_catwalk",
     "create_contour:contour_slope_layer",
-    "create_contour:contour_cogwheel"
+    "create_contour:contour_cogwheel",
+    "create_contour:contour_board"
   ]
 }

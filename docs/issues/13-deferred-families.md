@@ -43,6 +43,15 @@ wrench (ADR-016a IMPLEMENTED note; `byteComposition` GameTest). The
 panel/flat-pane channel matrix remains owner-input pending in
 ADR-016a's proposal and GH issue #5.
 
+PARTIAL IMPLEMENTATION (issue #24): `contour_board` ships the
+face-shell channel as an INDEPENDENT block - all six faces live in its
+own blockstate booleans with one `BoardOccupant` material/paid record
+per present face, merge-on-free-face placement, union collision,
+targeted paint, per-face wrench removal and BoardExtras persistence.
+What this family still owes: true cross-channel sharing (a board face
+inside a panel cell, the box frame) - that is the issue #22 universal
+model work, not this block.
+
 Acceptance contract when picked up:
 - New `ContourMultipartBlock` + occupant list on a dedicated BE type;
   `getShape` unions occupant boxes; each occupant keeps its own

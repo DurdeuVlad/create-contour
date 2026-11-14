@@ -301,6 +301,8 @@ public final class ContourClient {
 		(o, s, m) -> new ContourBoxModel(o, s, m,
 			net.createcontour.block.ContourCatwalkBlock::boxesFor,
 			ContourRegistries.CONTOUR_CATWALK);
+	private static final ModelFactory BOARD =
+		(o, s, m) -> new ContourBoardModel(o, s, m);
 	private static final ModelFactory IRON_DOOR =
 		(o, s, m) -> new ContourBoxModel(o, s, m,
 			net.createcontour.block.ContourDoorBlock::boxesFor,
@@ -627,6 +629,8 @@ public final class ContourClient {
 			ContourRegistries.CONTOUR_CATWALK_ITEM.get());
 		wrapBlock(event, ContourRegistries.CONTOUR_SLOPE_LAYER.get(), SLOPE_LAYER,
 			ContourRegistries.CONTOUR_SLOPE_LAYER_ITEM.get());
+		wrapBlock(event, ContourRegistries.CONTOUR_BOARD.get(), BOARD,
+			ContourRegistries.CONTOUR_BOARD_ITEM.get());
 		wrapBlock(event, ContourRegistries.CONTOUR_PYRAMID.get(),
 			ContourPyramidModel::new,
 			ContourRegistries.CONTOUR_PYRAMID_ITEM.get());
