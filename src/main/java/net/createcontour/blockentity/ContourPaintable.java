@@ -31,6 +31,15 @@ public interface ContourPaintable {
 	/** Host shape units this BE's single paint surface represents. */
 	int hostUnits();
 
+	/**
+	 * Material items billed for painting this host (ADR-019): defaults
+	 * to {@link #hostUnits()} - a 1:1 charge per host unit. Resizable
+	 * shapes (contour_layers) override toward whole-item fractions.
+	 */
+	default int materialUnits() {
+		return hostUnits();
+	}
+
 	/** Canonical facing used for item-payload round trips. */
 	Direction getFacing();
 
