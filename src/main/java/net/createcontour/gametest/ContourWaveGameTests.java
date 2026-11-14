@@ -295,7 +295,7 @@ public class ContourWaveGameTests {
 		h.assertTrue(BuiltInRegistries.BLOCK
 			.getTag(net.minecraft.tags.TagKey.create(Registries.BLOCK,
 				ResourceLocation.fromNamespaceAndPath("create_contour", "contour_shapes")))
-			.map(t -> t.size() == 116).orElse(false), "tag != 116 members");
+			.map(t -> t.size() == 117).orElse(false), "tag != 117 members");
 		h.succeed();
 	}
 

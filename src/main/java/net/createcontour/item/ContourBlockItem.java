@@ -465,7 +465,8 @@ public class ContourBlockItem extends BlockItem {
 			return result;
 		}
 		if (placed.getBlock()
-			instanceof net.createcontour.block.ContourBoardBlock) {
+				instanceof net.createcontour.block.ContourBoardBlock
+			&& cbe instanceof ContourBlockEntity cbe2) {
 			// Boards paint per face, never per host: seed one occupant
 			// record per present face flag (placement sets exactly one,
 			// or joins an existing cell via the merge branch above),
@@ -487,9 +488,9 @@ public class ContourBlockItem extends BlockItem {
 			for (Direction d : Direction.values())
 				if (net.createcontour.block.ContourBoardBlock
 					.facePresent(placed, d)
-					&& cbe.boardOccupantIndex(d.ordinal()) < 0)
-					cbe.addBoardOccupant(d.ordinal(), mat, paid);
-			cbe.applyPayload(MaterialSafety.neutral(), 0, facing, top);
+					&& cbe2.boardOccupantIndex(d.ordinal()) < 0)
+					cbe2.addBoardOccupant(d.ordinal(), mat, paid);
+			cbe2.applyPayload(MaterialSafety.neutral(), 0, facing, top);
 			return result;
 		}
 		if (paidTransfer) {
