@@ -1254,7 +1254,7 @@ public final class ContourClient {
 		paintAt(level, g, stone, Direction.SOUTH, false);
 		paintAt(level, g.south(), stone, Direction.NORTH, true);
 
-		// four bytes in one cell compose a bottom slab (BYTE_EXTRAS);
+		// four bytes in one cell compose a bottom slab (Occupants);
 		// a real bottom slab continues the same surface east.
 		g = GALLERY_BASE.offset(4, 0, 0);
 		put(level, g, ContourRegistries.CONTOUR_BYTE.get().defaultBlockState()
@@ -1334,7 +1334,7 @@ public final class ContourClient {
 		paintAt(level, g.south(), concrete, Direction.NORTH, false);
 
 		// vertical slab -> byte column: four bytes continue the
-		// half-wall one cell further (BYTE_EXTRAS a second time).
+		// half-wall one cell further (Occupants a second time).
 		g = GALLERY_BASE.offset(24, 0, 0);
 		put(level, g, ContourRegistries.CONTOUR_VERTICAL_SLAB.get()
 			.defaultBlockState().setValue(ContourVerticalSlabBlock.FACING,

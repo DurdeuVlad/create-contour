@@ -188,14 +188,18 @@ public class ContourCompositionGameTests {
 
 			// writeSafe exports the unit the schematic requirement will
 			// charge at print (1 per custom-material occupant under
-			// consume-on), not the stored paid - mirroring ByteExtras
+			// consume-on), not the stored paid - issue #22 writes one
+			// unified "Occupants" list whose Slot encodes kind*24+faceSlot
 			CompoundTag safe = new CompoundTag();
 			be2.writeSafe(safe, h.getLevel().registryAccess());
-			var extras = safe.getList("PanelExtras",
+			var extras = safe.getList("Occupants",
 				net.minecraft.nbt.Tag.TAG_COMPOUND);
 			h.assertTrue(extras.size() == 3
-				&& extras.getCompound(1).getInt("Kind")
-					== PanelSlots.KIND_HALF_PANEL
+				&& "panel".equals(extras.getCompound(1).getString("Kind"))
+				&& extras.getCompound(1).getInt("Slot")
+					== PanelSlots.encodeSlot(
+						PanelSlots.id(Direction.NORTH, 2),
+						PanelSlots.KIND_HALF_PANEL)
 				&& extras.getCompound(1).getInt("Paid") == 1
 				&& extras.getCompound(2).getInt("Paid") == 1,
 				"writeSafe dropped occupants or paid");
@@ -448,10 +452,11 @@ public class ContourCompositionGameTests {
 				"pane occupants lost in save/load");
 			CompoundTag safe = new CompoundTag();
 			be2.writeSafe(safe, h.getLevel().registryAccess());
-			var extras = safe.getList("PaneExtras",
+			var extras = safe.getList("Occupants",
 				net.minecraft.nbt.Tag.TAG_COMPOUND);
 			h.assertTrue(extras.size() == 2
-				&& extras.getCompound(0).getInt("Axis")
+				&& "pane".equals(extras.getCompound(0).getString("Kind"))
+				&& extras.getCompound(0).getInt("Slot")
 					== Direction.Axis.X.ordinal()
 				&& extras.getCompound(0).getInt("Paid") == 1,
 				"writeSafe dropped pane occupants");

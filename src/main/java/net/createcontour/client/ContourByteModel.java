@@ -20,13 +20,6 @@ public class ContourByteModel extends ContourModel {
 		return 0;
 	}
 
-	public record ByteExtra(int octant, BlockState material) {
-	}
-
-	public static final net.neoforged.neoforge.client.model.data.ModelProperty<
-		java.util.List<ByteExtra>> BYTE_EXTRAS =
-			new net.neoforged.neoforge.client.model.data.ModelProperty<>();
-
 	@Override
 	protected List<float[]> boxesFor(BlockState state) {
 		ContourByteBlock.Octant o = state.getValue(ContourByteBlock.OCTANT);
@@ -43,33 +36,11 @@ public class ContourByteModel extends ContourModel {
 		List<net.minecraft.client.renderer.block.model.BakedQuad> quads =
 			new java.util.ArrayList<>(super.getQuads(state, side, rand, data,
 				renderType));
-		java.util.List<ByteExtra> extras = data == null ? null
-			: data.get(BYTE_EXTRAS);
-		if (extras == null || extras.isEmpty())
-			return quads;
-		for (ByteExtra e : extras) {
-			ContourByteBlock.Octant o =
-				ContourByteBlock.Octant.values()[e.octant()];
-			// absolute octant coordinates -> the occupant's faces anchor
-			// UVs to its own cell position, the same cell-grid rule the
-			// base occupant gets via boxesFor (ADR-017 texture
-			// continuation across multi-occupant cells)
-			float x0 = o.x * 8f, y0 = o.y * 8f, z0 = o.z * 8f;
-			// Issue #19: occupant boundary faces blend toward same-
-			// material Contour neighbors (the neighbor's host material is
-			// compared against the occupant's own paint).
-			quads.addAll(blendBoundaryQuads(ShapeQuads.emitBoxes(
-				List.of(new float[]{x0, y0, z0, x0 + 8, y0 + 8, z0 + 8}),
-				side,
-				d -> sourcesFor(e.material(), d, rand,
-					net.neoforged.neoforge.client.model.data.ModelData.EMPTY,
-					renderType)),
-				side, e.material(),
-				d -> sourcesFor(e.material(), d, rand,
-					net.neoforged.neoforge.client.model.data.ModelData.EMPTY,
-					renderType),
-				rand, data, renderType));
-		}
+		// issue #22: unified extras emission - each Occupant's own
+		// footprint() supplies its channel geometry (same cell-grid UV
+		// anchoring and issue-#19 boundary blending as the host).
+		quads.addAll(ContourMultipartModel.emitExtras(this, data, side,
+			rand, renderType));
 		return quads;
 	}
 

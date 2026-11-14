@@ -39,11 +39,11 @@ import org.jetbrains.annotations.Nullable;
  * Geometry is ORTHOGONAL to the interior channels: board sheets hug the
  * 0..1px boundary shell while panel/pane geometry lives on the 7..9px
  * interior, so a painted board never collides with a panel in the same
- * volume. This block is nonetheless an independent channel: all six
- * faces live in the board's OWN blockstate, so a board cell cannot host
- * panel/pane occupants until the issue #22 universal model lands. The
- * face's material + paid ledger live in BoardOccupant extras, one per
- * present face.
+ * volume. Under the issue #22 universal host this orthogonality is what
+ * lets board shells co-reside with byte/panel/pane occupants on ANY
+ * multipart host cell; the blockstate faces remain the board channel's
+ * own claim surface (one BOARD-kind occupant record per present face),
+ * and records on other-kind hosts carry face geometry directly.
  */
 public class ContourBoardBlock extends ContourBlock {
 
@@ -155,6 +155,11 @@ public class ContourBoardBlock extends ContourBlock {
 		VoxelShape s = Shapes.empty();
 		for (float[] b : boxesFor(state))
 			s = Shapes.or(s, Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
+		// issue #22: union EVERY extra occupant's boxes (any kind).
+		if (level.getBlockEntity(pos) instanceof ContourBlockEntity be)
+			for (float[] b : be.extraFootprintBoxes())
+				s = Shapes.or(s,
+					Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
 		return s;
 	}
 
@@ -164,29 +169,14 @@ public class ContourBoardBlock extends ContourBlock {
 	}
 
 	/**
-	 * Merge eligibility: a board item clicked onto this cell claims the
-	 * CLICKED face as its mount face; replaceable only while that face
-	 * is still free. Same clicked-cell reconstruction trap as
-	 * ContourByteBlock/ContourFlatPaneBlock: getClickedPos() is
-	 * unreliable inside canBeReplaced, so the hit point is nudged
-	 * opposite the clicked face to land inside the hit cell.
+	 * Merge eligibility (issue #22): universal geometric gate. A board
+	 * item claims the CLICKED face's shell - free while the face is
+	 * unclaimed on a board host and the shell is geometrically
+	 * disjoint from every different-kind occupant.
 	 */
 	@Override
 	public boolean canBeReplaced(BlockState state, BlockPlaceContext ctx) {
-		if (!(ctx.getItemInHand().getItem() instanceof ContourBlockItem)
-			|| ctx.getItemInHand().getItem() != asItem())
-			return false;
-		Vec3 click = ctx.getClickLocation();
-		BlockPos clicked = BlockPos.containing(click.subtract(
-			Vec3.atLowerCornerOf(ctx.getClickedFace().getNormal())
-				.scale(1.0E-4)));
-		BlockState cell = ctx.getLevel().getBlockState(clicked);
-		if (cell.getBlock() != this)
-			return false;
-		if (!(ctx.getLevel().getBlockEntity(clicked)
-			instanceof ContourBlockEntity be) || be.isFrozen())
-			return false;
-		return !facePresent(cell, ctx.getClickedFace());
+		return ContourBlockEntity.canMergeInto(ctx);
 	}
 
 	/**
@@ -238,8 +228,14 @@ public class ContourBoardBlock extends ContourBlock {
 		Direction f = faceAtLocal(state, local, context.getClickedFace());
 		if (f == null)
 			return InteractionResult.PASS;
-		if (faceCount(state) == 1) {
-			// Last sheet: identical economics to the sneak-wrench pickup.
+		boolean otherOccupants = be.getOccupants().stream()
+			.anyMatch(o -> o.kind()
+				!= ContourBlockEntity.OccupantKind.BOARD);
+		if (faceCount(state) == 1 && !otherOccupants) {
+			// Last sheet and nothing else carries the cell: identical
+			// economics to the sneak-wrench pickup. (issue #22: when
+			// other-kind occupants remain the zero-face state stays as
+			// their carrier - the board flag simply clears.)
 			List<ItemStack> drops = ledgerDrops(state, be);
 			if (!level.removeBlock(pos, false))
 				return InteractionResult.FAIL;

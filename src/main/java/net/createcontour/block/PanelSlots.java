@@ -36,6 +36,23 @@ public final class PanelSlots {
 	public static final int KIND_PANEL = 2;
 	private static final int SLOT_COUNT = 24;
 
+	/**
+	 * issue #22: the unified Occupant list flattens (faceSlot, kind)
+	 * into one int: {@code encoded = kind * 24 + faceSlot}. Decode via
+	 * {@link #slotFace}/{@link #slotKind}.
+	 */
+	public static int encodeSlot(int faceSlot, int kind) {
+		return kind * SLOT_COUNT + faceSlot;
+	}
+
+	public static int slotFace(int encoded) {
+		return encoded % SLOT_COUNT;
+	}
+
+	public static int slotKind(int encoded) {
+		return encoded / SLOT_COUNT;
+	}
+
 	/** slot id for a face + kind-specific sub index. */
 	public static int id(Direction face, int sub) {
 		return face.ordinal() * 4 + (sub & 3);
@@ -228,31 +245,12 @@ public final class PanelSlots {
 	}
 
 	/**
-	 * Shared merge gate for the panel family (canBeReplaced): the held
-	 * item must be a family block and its slot claim on the clicked face
-	 * must be disjoint from the cell's occupants. Clicked-cell
-	 * reconstruction mirrors ContourByteBlock - getClickedPos() is
-	 * unreliable inside canBeReplaced, so the hit point is nudged
-	 * opposite the clicked face to land inside the hit cell.
+	 * Merge resolution moved to
+	 * {@code ContourBlockEntity.canMergeInto} (issue #22): one
+	 * universal gate resolves the held item's occupant spec on the
+	 * reconstructed clicked cell and checks intra-kind claims plus
+	 * cross-kind geometric disjointness.
 	 */
-	public static boolean canMergeReplace(BlockState state,
-		net.minecraft.world.item.context.BlockPlaceContext ctx) {
-		if (!(ctx.getItemInHand().getItem()
-			instanceof net.createcontour.item.ContourBlockItem cbi)
-			|| !isPanelFamily(cbi.getBlock()))
-			return false;
-		Vec3 click = ctx.getClickLocation();
-		BlockPos clicked = BlockPos.containing(click.subtract(
-			Vec3.atLowerCornerOf(ctx.getClickedFace().getNormal())
-				.scale(1.0E-4)));
-		if (!(ctx.getLevel().getBlockEntity(clicked)
-			instanceof net.createcontour.blockentity.ContourBlockEntity be))
-			return false;
-		int kind = kindOf(cbi.getBlock());
-		int slot = incomingSlot(cbi.getBlock(), ctx.getClickedFace(), click,
-			clicked);
-		return slot >= 0 && be.panelSlotsFree(slots(slot, kind));
-	}
 
 	/**
 	 * Incoming merge anchor for a family item: the face slot claim the

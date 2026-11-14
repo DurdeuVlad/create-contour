@@ -296,6 +296,16 @@ public abstract class ContourModel extends CopycatModel {
 		NEIGHBOR_WRAPPED = new net.neoforged.neoforge.client.model.data.ModelProperty<>();
 
 	/**
+	 * Issue #22 universal host: ONE extras list every host-family model
+	 * consumes. Each {@link ContourBlockEntity.Occupant} decodes its own
+	 * channel geometry via footprint(); the board model additionally
+	 * partitions BOARD-kind records into its per-face material map.
+	 */
+	public static final net.neoforged.neoforge.client.model.data.ModelProperty<
+		java.util.List<ContourBlockEntity.Occupant>> OCCUPANT_EXTRAS =
+			new net.neoforged.neoforge.client.model.data.ModelProperty<>();
+
+	/**
 	 * Issue #19: remap the emitted boundary list for `side` to the
 	 * material's opposite-direction face region when the axial Contour
 	 * neighbor presents a coplanar face painted the SAME material.
@@ -365,36 +375,17 @@ public abstract class ContourModel extends CopycatModel {
 					cm.original.getParticleIcon()))).isEmpty())
 				return true;
 			// Occupant extras reach the shared plane outside the host
-			// shape's footprint (byte octants, panel slots, pane sheets).
+			// shape's footprint (byte octants, panel slots, pane sheets,
+			// board shells - issue #22's unified list decodes each kind's
+			// own boxes).
 			ModelData nd = level.getModelData(np);
 			if (nd == null)
 				return false;
-			List<ContourByteModel.ByteExtra> bytes =
-				nd.get(ContourByteModel.BYTE_EXTRAS);
-			if (bytes != null)
-				for (ContourByteModel.ByteExtra e : bytes) {
-					net.createcontour.block.ContourByteBlock.Octant o =
-						net.createcontour.block.ContourByteBlock.Octant
-							.values()[e.octant()];
-					if (boxReachesPlane(new float[]{o.x * 8f, o.y * 8f,
-						o.z * 8f, o.x * 8f + 8f, o.y * 8f + 8f,
-						o.z * 8f + 8f}, face))
-						return true;
-				}
-			List<ContourMultipartModel.PanelExtra> panels =
-				nd.get(ContourMultipartModel.PANEL_EXTRAS);
-			if (panels != null)
-				for (ContourMultipartModel.PanelExtra e : panels)
-					for (float[] b : net.createcontour.block.PanelSlots
-						.occupantBoxes(e.slot(), e.kind()))
-						if (boxReachesPlane(b, face))
-							return true;
-			List<ContourMultipartModel.PaneExtra> panes =
-				nd.get(ContourMultipartModel.PANE_EXTRAS);
-			if (panes != null)
-				for (ContourMultipartModel.PaneExtra e : panes)
-					for (float[] b : net.createcontour.block
-						.ContourFlatPaneBlock.boxesForAxis(e.axis()))
+			List<ContourBlockEntity.Occupant> extras =
+				nd.get(OCCUPANT_EXTRAS);
+			if (extras != null)
+				for (ContourBlockEntity.Occupant e : extras)
+					for (float[] b : e.footprint())
 						if (boxReachesPlane(b, face))
 							return true;
 			return false;

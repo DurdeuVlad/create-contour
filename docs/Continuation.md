@@ -22,32 +22,39 @@ the acceptance evidence. No pair in this file is verified yet.
   edges are lattice-aligned ([Decision.md](Decision.md) ADR-017,
   lattice contract).
 - Occupancy channels inside one cell
-  ([Decision.md](Decision.md) ADR-016a + ADR-017):
-  - Octant channel: 8 disjoint 8px cubes (x<8/x>=8) x (y<8/y>=8) x
-    (z<8/z>=8). SHIPPED in 0.2.1: `contour_byte` occupants 1..7 live in
-    `ContourBlockEntity.byteOccupants` (`ByteExtras`); the
+  ([Decision.md](Decision.md) ADR-016a + ADR-017 + ADR-018):
+  - Universal occupant model (issue #22, SHIPPED): every extra
+    occupant is one `(kind, slot, material, paid)` record in
+    `ContourBlockEntity.occupants`, serialized as the unified
+    `Occupants` NBT list ({Kind, Slot, Material, Paid}); the
+    `getByteOccupants()`/`getPanelOccupants()`/`getPaneOccupants()`/
+    `getBoardOccupants()` views are read-only
+    projections of it and the legacy `ByteExtras`/`PanelExtras`/
+    `PaneExtras`/`BoardExtras` keys migrate into the list on load
+    (never re-emitted). Occupant #0 stays in blockstate.
+  - Octant channel (kind BYTE): 8 disjoint 8px cubes
+    (x<8/x>=8) x (y<8/y>=8) x (z<8/z>=8). SHIPPED in 0.2.1; the
     `byteComposition` GameTest is the recorded evidence
     ([Testing.md](Testing.md)).
-  - Face-quadrant channel: 24 slots (6 faces x 4 quadrants). Single-
-    occupant members shipped (`contour_panel`, `contour_half_panel`,
+  - Face-quadrant channel (kind PANEL): 24 slots (6 faces x 4
+    quadrants); the record slot encodes `subKind*24+faceSlot`.
+    Members shipped (`contour_panel`, `contour_half_panel`,
     `contour_byte_panel`); multi-occupant composition is pending the
     owner matrix in ADR-016a / issue 5.
-  - Interior-plane channel: mid-planes on X/Y/Z axes (each a 2px-thick
-    center sheet). Single-occupant member shipped (`contour_flat_pane`,
-    the y=7..9 sheet); multi-plane composition is pending the owner
-    matrix in ADR-016a / issue 5.
-  - Face-shell channel: 1px sheets hugging the 0..1px interior shell of
-    each cell face (issue #24). SHIPPED as an independent block:
-    `contour_board` carries all six faces in its own blockstate
-    (down/up/north/south/west/east) and one `BoardOccupant` record per
-    present face in `ContourBlockEntity.boardOccupants`
-    (`BoardExtras`). Until issue #22's universal model merges the
-    channels, a board cell cannot host panel/pane occupants and no
-    other channel can host a board face - the shell is geometrically
-    orthogonal to the 7..9px interior planes, but the occupancy is not
-    shared yet.
-- Channels never overlap within a cell; cross-channel co-residence is
-  allowed only where the geometries cannot intersect (section 4).
+  - Interior-plane channel (kind PANE): mid-planes on X/Y/Z axes
+    (each a 2px-thick center sheet). Single-occupant member shipped
+    (`contour_flat_pane`, the y=7..9 sheet); multi-plane composition
+    is pending the owner matrix in ADR-016a / issue 5.
+  - Face-shell channel (kind BOARD): 1px sheets hugging the 0..1px
+    interior shell of each cell face (issue #24). `contour_board`
+    carries all six faces in its own blockstate
+    (down/up/north/south/west/east) plus one BOARD record per present
+    face; on non-board hosts the record carries the shell directly.
+- Same-kind claims follow each channel's lattice rule (octant set,
+  disjoint slot claims, axis exclusivity, face uniqueness);
+  cross-kind co-residence is allowed iff the candidate's occupied
+  boxes are geometrically disjoint from every different-kind
+  occupant and a different-kind host's own footprint (section 4).
 - Boundary continuation happens between cells, never inside one:
   inside-cell composition is the channel question above, not a mate
   pair.
@@ -479,34 +486,47 @@ Members: `contour_lever`, `contour_button`, `contour_pressure_plate`,
 | awning canopy edge | awning at the same facing (canopy run) | pending render verification |
 | ladder plate | ladder stacked vertically on the same wall face | pending render verification |
 
-## 4. Cross-channel co-residence
+## 4. Cross-kind co-residence
 
-Within a cell, channels never overlap; across a boundary, continuation
-is evaluated per face without regard to channel.
+Issue #22's universal model (ADR-018) made co-residence a GEOMETRY
+question, not a channel-membership question: on the four multipart
+host families (byte, panel family, flat pane, board) a merge is legal
+iff (a) the candidate's intra-kind lattice claim is free and (b) its
+occupied boxes are geometrically disjoint from every different-kind
+occupant and a different-kind host's own footprint. Across a
+boundary, continuation is evaluated per face without regard to kind.
 
-- Byte + panel cells never mix in v1
-  ([Decision.md](Decision.md) ADR-016a): a cell is either a
-  Byte-composition cell or a panel-composition cell, never both.
-- Octant + octant co-residence is disjoint-only: a new byte occupant is
-  accepted iff its octant slot is free (any subset of the 8 slots is
-  legal by construction).
-- Face-quadrant occupants accept iff their slot set is disjoint from
-  all existing occupants' (ADR-016); multi-occupant composition is
-  pending the owner matrix in ADR-016a.
-- Interior-plane + face-quadrant co-residence is always allowed where
-  proposed: a 1px face plate at the cell boundary and a 7..9 interior
-  sheet physically cannot intersect (ADR-016a matrix proposal - owner
-  confirmation pending).
-- Face-shell + face-quadrant/interior-plane co-residence (issue #24):
-  board sheets hug the 0..1px boundary shell and interior geometry
-  never crosses 1..15px, so the channels are physically orthogonal.
-  The channel itself is nonetheless INDEPENDENT in v1: all six board
-  faces live in the board's own blockstate (there is no "host + extra"
-  split like byte/panel/pane), so a board cell cannot host panel or
-  pane occupants and a panel cell cannot host board faces. True
-  cross-channel sharing is the issue #22 universal-model work; the
-  honest limitation is that boards compose only with other board
-  faces in the same cell (one occupant record per face flag).
+- Octant + octant co-residence is disjoint-only: a new byte occupant
+  is accepted iff its octant slot is free (any subset of the 8 slots
+  is legal by construction).
+- Face-quadrant occupants accept iff their slot claim is disjoint
+  from all same-kind claims; multi-occupant composition is pending
+  the owner matrix in ADR-016a. Plates on adjacent faces still share
+  edge corners by design.
+- Interior-plane sheets on different axes still cross each other
+  (axis exclusivity is the whole rule); the same geometric freedom
+  now applies inside the pane channel only - a pane plane can never
+  join a byte or panel host because the 7..9px sheet always meets an
+  8px octant cube or a face quadrant plate.
+- Byte + panel + board co-residence is legal where the boxes do not
+  intersect: e.g., an UP-face byte_panel plate beside a low octant,
+  or UP/SOUTH/EAST board shells beside a low-front-left octant. A
+  board shell always spans a whole face, so it merges only on faces
+  no other-kind geometry reaches.
+- Face-shell + face-quadrant/interior-plane co-residence (issue #24,
+  unlocked by #22): board sheets hug the 0..1px boundary shell and
+  interior pane geometry lives at 7..9px, so board + pane coexist on
+  the same cell; board + byte/panel coexist wherever the shell face
+  is untouched. A BOARD record on a `contour_board` host requires the
+  blockstate face flag (the flag is the channel's claim surface); on
+  other hosts the record itself is the claim.
+- Honest limits: the primary occupant (#0) still lives in blockstate
+  - cross-kind co-residence applies to EXTRA occupants and to merge
+  claims against the host footprint, not to swapping the blockstate
+  kind itself; extras exist only on the four multipart families
+  (other Contour shapes have no occupant surface); byte/panel/pane
+  occupant slots do not remap under structure rotation (board face
+  anchors do) - preserved semantics documented as a limitation.
 
 ## 5. Known non-continuations
 
@@ -536,13 +556,14 @@ is evaluated per face without regard to channel.
   never continue - contact without area is not an interface.
 - Open door/trapdoor leaves are parked states (ADR-015): the leaf sits
   on the hinge side and presents no continuation face while open.
-- Mixed byte + panel cells are unsupported in v1 (ADR-016a) - no
-  cross-channel mate exists inside one cell.
-- Board cells (issue #24) never co-host a panel/pane occupant, and a
-  panel cell never carries a board face - the face-shell channel is
-  independent until issue #22's universal model merges channels (the
-  1px shell and the 7..9px interior are disjoint by geometry, but the
-  occupancy model does not share them yet).
+- Mixed byte + panel + board cells ARE supported since issue #22
+  wherever the geometries are disjoint (section 4) - the remaining
+  non-continuation is the boundary seam between different materials,
+  not cell-internal sharing.
+- Non-multipart Contour shapes (slabs, stairs, waves...) host no
+  extras at all: the universal occupant surface exists only on the
+  byte/panel-family/flat-pane/board hosts whose models emit occupant
+  geometry.
 
 ## 6. Verification surface
 

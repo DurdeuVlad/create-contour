@@ -80,19 +80,32 @@ public class ContourPanelBlock extends ContourBlock {
 	/** Stepped 5-slice approximation for the 45-degree plate. */
 	private static VoxelShape diagShape(PanelPos p) {
 		VoxelShape shape = Shapes.empty();
+		for (float[] b : diagCollisionBoxes(p))
+			shape = Shapes.or(shape,
+				Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
+		return shape;
+	}
+
+	/**
+	 * The diagonal plate's collision footprint as pixel-space AABBs
+	 * (issue #22: shared with the cross-kind merge gate).
+	 */
+	public static List<float[]> diagCollisionBoxes(PanelPos p) {
+		List<float[]> out = new ArrayList<>(5);
 		for (int i = 0; i < 5; i++) {
 			float s = i * 3.2f, e = s + 3.2f;
 			float lo = Math.max(0, s - 1.5f), hi = Math.min(16, e + 1.5f - 3.2f);
-			shape = Shapes.or(shape, switch (p) {
-				case DIAG_Y0 -> Block.box(lo, 0, s, hi + 3.2f > 16 ? 16 : hi + 3.2f, 16, e);
-				case DIAG_Y1 -> Block.box(16 - Math.min(16, hi + 3.2f), 0, s, 16 - lo, 16, e);
-				case DIAG_X0 -> Block.box(s, lo, 0, e, hi + 3.2f > 16 ? 16 : hi + 3.2f, 16);
-				case DIAG_X1 -> Block.box(s, 16 - Math.min(16, hi + 3.2f), 0, e, 16 - lo, 16);
-				case DIAG_Z0 -> Block.box(s, 0, lo, e, 16, hi + 3.2f > 16 ? 16 : hi + 3.2f);
-				default -> Block.box(s, 0, 16 - Math.min(16, hi + 3.2f), e, 16, 16 - lo);
+			float hiCap = Math.min(16, hi + 3.2f);
+			out.add(switch (p) {
+				case DIAG_Y0 -> new float[]{lo, 0, s, hiCap, 16, e};
+				case DIAG_Y1 -> new float[]{16 - hiCap, 0, s, 16 - lo, 16, e};
+				case DIAG_X0 -> new float[]{s, lo, 0, e, hiCap, 16};
+				case DIAG_X1 -> new float[]{s, 16 - hiCap, 0, e, 16 - lo, 16};
+				case DIAG_Z0 -> new float[]{s, 0, lo, e, 16, hiCap};
+				default -> new float[]{s, 0, 16 - hiCap, e, 16, 16 - lo};
 			});
 		}
-		return shape;
+		return out;
 	}
 
 	/**
@@ -192,11 +205,11 @@ public class ContourPanelBlock extends ContourBlock {
 	public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
 		CollisionContext ctx) {
 		VoxelShape s = SHAPES[state.getValue(POSITION).ordinal()];
+		// issue #22: union EVERY extra occupant's boxes (any kind).
 		if (level.getBlockEntity(pos) instanceof ContourBlockEntity be)
-			for (ContourBlockEntity.PanelOccupant occ : be.getPanelOccupants())
-				for (float[] b : PanelSlots.occupantBoxes(occ.slot(), occ.kind()))
-					s = Shapes.or(s,
-						Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
+			for (float[] b : be.extraFootprintBoxes())
+				s = Shapes.or(s,
+					Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
 		return s;
 	}
 
@@ -205,10 +218,10 @@ public class ContourPanelBlock extends ContourBlock {
 		return true;
 	}
 
-	/** Merge eligibility: family item + disjoint slot claim (PanelSlots). */
+	/** Merge eligibility (issue #22): universal geometric gate. */
 	@Override
 	public boolean canBeReplaced(BlockState state, BlockPlaceContext ctx) {
-		return PanelSlots.canMergeReplace(state, ctx);
+		return ContourBlockEntity.canMergeInto(ctx);
 	}
 
 	@Override
@@ -218,7 +231,7 @@ public class ContourPanelBlock extends ContourBlock {
 		net.minecraft.world.entity.player.Player player,
 		net.minecraft.world.InteractionHand hand,
 		net.minecraft.world.phys.BlockHitResult hit) {
-		return usePanelOccupantItemOn(stack, state, level, pos, player, hand,
+		return useOccupantItemOn(stack, state, level, pos, player, hand,
 			hit);
 	}
 
@@ -290,7 +303,9 @@ public class ContourPanelBlock extends ContourBlock {
 	protected BlockState wrenchTarget(BlockState state, ContourBlockEntity be) {
 		// Cycle positions, skipping any whose slot footprint collides
 		// with OTHER occupants. Non-FACE positions claim all 24 slots,
-		// so they stay reachable only while no extras exist.
+		// so they stay reachable only while no same-kind extras exist;
+		// (issue #22) candidates must also be geometrically disjoint
+		// from every different-kind occupant.
 		if (be == null)
 			return state.cycle(POSITION);
 		java.util.Set<Integer> others = be.occupiedPanelSlots();
@@ -300,7 +315,9 @@ public class ContourPanelBlock extends ContourBlock {
 			p = PanelPos.values()[(p.ordinal() + 1)
 				% PanelPos.values().length];
 			BlockState cand = state.setValue(POSITION, p);
-			if (java.util.Collections.disjoint(others, currentSlots(cand)))
+			if (java.util.Collections.disjoint(others, currentSlots(cand))
+				&& be.crossKindClear(ContourBlockEntity.OccupantKind.PANEL,
+					ContourBlockEntity.hostFootprint(cand)))
 				return cand;
 		}
 		return state;

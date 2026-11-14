@@ -14,25 +14,18 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.client.model.data.ModelProperty;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Board model (issue #24): emits one 1px face-shell box per present
- * face flag. Unlike the host-material shapes, EVERY face samples its
- * own material from the BOARD_EXTRAS model-data list (one record per
- * face); records missing or neutral emit the neutral mesh. Without
- * extras data - the bound item render or an uninstrumented call - the
+ * Board model (issue #24/#22): emits one 1px face-shell box per
+ * present face flag, each sampling its own material from the unified
+ * OCCUPANT_EXTRAS list's BOARD-kind records (one per face); records
+ * missing or neutral emit the neutral mesh. Non-BOARD occupants on
+ * the cell emit through the shared extras path. Without extras data -
+ * the bound item render or an uninstrumented call - the
  * uniform-material path renders the whole state like any other shape.
  */
 public class ContourBoardModel extends ContourModel {
-
-	/** Per-face paint: face ordinal + that sheet's material. */
-	public record BoardExtra(int face, BlockState material) {
-	}
-
-	public static final ModelProperty<List<BoardExtra>> BOARD_EXTRAS =
-		new ModelProperty<>();
 
 	public ContourBoardModel(BakedModel original,
 		@Nullable BlockState boundState, @Nullable BlockState boundMaterial) {
@@ -79,14 +72,18 @@ public class ContourBoardModel extends ContourModel {
 	public List<BakedQuad> getQuads(@Nullable BlockState state,
 		@Nullable Direction side, RandomSource rand, ModelData data,
 		@Nullable RenderType renderType) {
-		List<BoardExtra> faces = data == null ? null : data.get(BOARD_EXTRAS);
-		if (faces == null || faces.isEmpty() || state == null)
+		List<net.createcontour.blockentity.ContourBlockEntity.Occupant> extras =
+			data == null ? null : data.get(ContourModel.OCCUPANT_EXTRAS);
+		if (extras == null || extras.isEmpty() || state == null)
 			return super.getQuads(state, side, rand, data, renderType);
 		try {
 			BlockState[] mats = new BlockState[6];
-			for (BoardExtra e : faces)
-				if (e.face() >= 0 && e.face() < 6)
-					mats[e.face()] = validMaterial(e.material());
+			for (net.createcontour.blockentity.ContourBlockEntity.Occupant e
+				: extras)
+				if (e.kind() == net.createcontour.blockentity
+					.ContourBlockEntity.OccupantKind.BOARD
+					&& e.slot() >= 0 && e.slot() < 6)
+					mats[e.slot()] = validMaterial(e.material());
 			// Neutral faces emit only in the passes the unbound model
 			// would use; material faces are renderType-filtered by
 			// sourcesFor itself. Without this gate a neutral face would
@@ -111,6 +108,13 @@ public class ContourBoardModel extends ContourModel {
 					dir -> sourcesFor(m, dir, rand, ModelData.EMPTY,
 						renderType)));
 			}
+			// issue #22: non-BOARD occupants on this cell emit through
+			// the shared extras path (BOARD records were rendered by the
+			// per-face loop above with its neutral-pass gate).
+			out.addAll(ContourMultipartModel.emitExtras(this, data, side,
+				rand, renderType,
+				net.createcontour.blockentity.ContourBlockEntity
+					.OccupantKind.BOARD));
 			return out;
 		} catch (RuntimeException e) {
 			return super.getQuads(state, side, rand, data, renderType);
@@ -119,19 +123,21 @@ public class ContourBoardModel extends ContourModel {
 
 	/**
 	 * Chunk render types are the UNION of the host type set and every
-	 * painted face's material set - otherwise a translucent-painted
-	 * face (all faces live in this channel) would never get a pass.
+	 * painted occupant's material set - otherwise a translucent-painted
+	 * sheet or interior occupant would never get a pass.
 	 */
 	@Override
 	public ChunkRenderTypeSet getRenderTypes(BlockState state,
 		RandomSource rand, ModelData data) {
 		ChunkRenderTypeSet set = super.getRenderTypes(state, rand, data);
-		List<BoardExtra> faces = data == null ? null : data.get(BOARD_EXTRAS);
-		if (faces == null || faces.isEmpty())
+		List<net.createcontour.blockentity.ContourBlockEntity.Occupant> extras =
+			data == null ? null : data.get(ContourModel.OCCUPANT_EXTRAS);
+		if (extras == null || extras.isEmpty())
 			return set;
 		List<ChunkRenderTypeSet> sets = new ArrayList<>();
 		sets.add(set);
-		for (BoardExtra e : faces) {
+		for (net.createcontour.blockentity.ContourBlockEntity.Occupant e
+			: extras) {
 			BlockState m = validMaterial(e.material());
 			if (m == null)
 				continue;

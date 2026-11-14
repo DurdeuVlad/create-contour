@@ -53,11 +53,11 @@ public class ContourFlatPaneBlock extends ContourBlock {
 		VoxelShape s = Shapes.empty();
 		for (float[] b : boxesFor(state))
 			s = Shapes.or(s, Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
+		// issue #22: union EVERY extra occupant's boxes (any kind).
 		if (level.getBlockEntity(pos) instanceof ContourBlockEntity be)
-			for (ContourBlockEntity.PaneOccupant occ : be.getPaneOccupants())
-				for (float[] b : boxesForAxis(occ.axis()))
-					s = Shapes.or(s,
-						Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
+			for (float[] b : be.extraFootprintBoxes())
+				s = Shapes.or(s,
+					Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
 		return s;
 	}
 
@@ -67,25 +67,14 @@ public class ContourFlatPaneBlock extends ContourBlock {
 	}
 
 	/**
-	 * Merge eligibility: a flat-pane item clicked onto this cell claims
-	 * the mid-plane on the clicked face's axis; replaceable only when
-	 * that axis is still free (same-axis exclusive). Same clicked-cell
-	 * reconstruction trap as ContourByteBlock applies.
+	 * Merge eligibility (issue #22): universal geometric gate. A pane
+	 * item claims the mid-plane on the clicked face's axis - free only
+	 * when that axis is unclaimed AND the plane is geometrically
+	 * disjoint from every different-kind occupant.
 	 */
 	@Override
 	public boolean canBeReplaced(BlockState state, BlockPlaceContext ctx) {
-		if (!(ctx.getItemInHand().getItem() instanceof ContourBlockItem)
-			|| ctx.getItemInHand().getItem() != asItem())
-			return false;
-		Vec3 click = ctx.getClickLocation();
-		BlockPos clicked = BlockPos.containing(click.subtract(
-			Vec3.atLowerCornerOf(ctx.getClickedFace().getNormal())
-				.scale(1.0E-4)));
-		if (!(ctx.getLevel().getBlockEntity(clicked)
-			instanceof ContourBlockEntity be))
-			return false;
-		return !be.occupiedPaneAxes()
-			.contains(ctx.getClickedFace().getAxis().ordinal());
+		return ContourBlockEntity.canMergeInto(ctx);
 	}
 
 	@Override
@@ -95,7 +84,7 @@ public class ContourFlatPaneBlock extends ContourBlock {
 		net.minecraft.world.entity.player.Player player,
 		net.minecraft.world.InteractionHand hand,
 		net.minecraft.world.phys.BlockHitResult hit) {
-		return usePaneOccupantItemOn(stack, state, level, pos, player, hand,
+		return useOccupantItemOn(stack, state, level, pos, player, hand,
 			hit);
 	}
 

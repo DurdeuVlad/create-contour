@@ -361,13 +361,16 @@ public class ContourBoardGameTests {
 			// consume-on); neutral sheets export no credit.
 			CompoundTag safe = new CompoundTag();
 			be2.writeSafe(safe, h.getLevel().registryAccess());
-			var extras = safe.getList("BoardExtras",
+			var extras = safe.getList("Occupants",
 				net.minecraft.nbt.Tag.TAG_COMPOUND);
 			h.assertTrue(extras.size() == 3, "writeSafe dropped faces: "
 				+ extras.size());
 			int paidDown = -1, paidUp = -1;
 			for (int i = 0; i < extras.size(); i++) {
-				int f = extras.getCompound(i).getInt("Face");
+				if (!"board".equals(
+					extras.getCompound(i).getString("Kind")))
+					continue;
+				int f = extras.getCompound(i).getInt("Slot");
 				if (f == Direction.DOWN.ordinal())
 					paidDown = extras.getCompound(i).getInt("Paid");
 				if (f == Direction.UP.ordinal())
@@ -384,16 +387,18 @@ public class ContourBoardGameTests {
 			// records for faces not present in the blockstate - or
 			// duplicate faces - are dropped on load, not trusted.
 			CompoundTag dirty = tag.copy();
-			var dirtyList = dirty.getList("BoardExtras",
+			var dirtyList = dirty.getList("Occupants",
 				net.minecraft.nbt.Tag.TAG_COMPOUND);
 			CompoundTag orphan = new CompoundTag();
-			orphan.putInt("Face", Direction.EAST.ordinal());
+			orphan.putString("Kind", "board");
+			orphan.putInt("Slot", Direction.EAST.ordinal());
 			orphan.put("Material", net.minecraft.nbt.NbtUtils
 				.writeBlockState(Blocks.GLASS.defaultBlockState()));
 			orphan.putInt("Paid", 1);
 			dirtyList.add(orphan);
 			CompoundTag dup = new CompoundTag();
-			dup.putInt("Face", Direction.DOWN.ordinal());
+			dup.putString("Kind", "board");
+			dup.putInt("Slot", Direction.DOWN.ordinal());
 			dup.put("Material", net.minecraft.nbt.NbtUtils
 				.writeBlockState(Blocks.GLASS.defaultBlockState()));
 			dup.putInt("Paid", 1);

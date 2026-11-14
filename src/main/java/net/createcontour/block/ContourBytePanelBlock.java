@@ -75,11 +75,11 @@ public class ContourBytePanelBlock extends ContourBlock {
 		VoxelShape s = Shapes.empty();
 		for (float[] b : boxesFor(state))
 			s = Shapes.or(s, Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
+		// issue #22: union EVERY extra occupant's boxes (any kind).
 		if (level.getBlockEntity(pos) instanceof ContourBlockEntity be)
-			for (ContourBlockEntity.PanelOccupant occ : be.getPanelOccupants())
-				for (float[] b : PanelSlots.occupantBoxes(occ.slot(), occ.kind()))
-					s = Shapes.or(s,
-						Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
+			for (float[] b : be.extraFootprintBoxes())
+				s = Shapes.or(s,
+					Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
 		return s;
 	}
 
@@ -89,13 +89,13 @@ public class ContourBytePanelBlock extends ContourBlock {
 	}
 
 	/**
-	 * Merge eligibility: a panel-family item clicked onto this cell may
-	 * replace it when the incoming slot claim is disjoint. Clicked-cell
-	 * reconstruction mirrors ContourByteBlock (the getClickedPos trap).
+	 * Merge eligibility (issue #22): universal geometric gate - any
+	 * Contour occupant item whose claim is legal (intra-kind lattice +
+	 * cross-kind disjointness) may replace into this cell.
 	 */
 	@Override
 	public boolean canBeReplaced(BlockState state, BlockPlaceContext ctx) {
-		return PanelSlots.canMergeReplace(state, ctx);
+		return ContourBlockEntity.canMergeInto(ctx);
 	}
 
 	@Override
@@ -105,7 +105,7 @@ public class ContourBytePanelBlock extends ContourBlock {
 		net.minecraft.world.entity.player.Player player,
 		net.minecraft.world.InteractionHand hand,
 		net.minecraft.world.phys.BlockHitResult hit) {
-		return usePanelOccupantItemOn(stack, state, level, pos, player, hand,
+		return useOccupantItemOn(stack, state, level, pos, player, hand,
 			hit);
 	}
 
@@ -132,18 +132,23 @@ public class ContourBytePanelBlock extends ContourBlock {
 	@Override
 	protected BlockState wrenchTarget(BlockState state, ContourBlockEntity be) {
 		// Occupant #0 cycles to the next FREE quadrant on its face -
-		// landing on an extra occupant's slot would collapse two units.
+		// landing on an extra occupant's slot would collapse two units,
+		// and (issue #22) the destination plate must be geometrically
+		// disjoint from every different-kind occupant.
 		if (be == null)
 			return state.cycle(QUADRANT);
 		java.util.Set<Integer> occupied = be.occupiedPanelSlots();
-		int face = state.getValue(FACING).ordinal() * 4;
+		Direction face = state.getValue(FACING);
+		int faceBase = face.ordinal() * 4;
 		int q = state.getValue(QUADRANT);
 		for (int i = 0; i < 3; i++) {
 			q = (q + 1) & 3;
-			if (!occupied.contains(face + q))
+			if (!occupied.contains(faceBase + q)
+				&& be.crossKindClear(ContourBlockEntity.OccupantKind.PANEL,
+					boxesFor(face, q)))
 				return state.setValue(QUADRANT, q);
 		}
-		return state; // all other quadrants occupied
+		return state; // all other quadrants claimed
 	}
 
 	@Override

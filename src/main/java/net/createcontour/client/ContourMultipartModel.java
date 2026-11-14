@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import net.createcontour.block.PanelSlots;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
@@ -13,30 +12,18 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.client.model.data.ModelProperty;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Box-model host for the multipart occupancy channels (issue #12):
+ * Box-model host for the multipart occupancy channels (issue #12/#22):
  * emits the bound state's boxes via ContourBoxModel, then one box set
- * per extra occupant from model data - PanelExtra (slot anchor + kind,
- * geometry via PanelSlots) and PaneExtra (axis mid-plane). Used for
- * byte_panel / half_panel / flat_pane; the positional panel model
- * emits the same lists through {@link #emitExtras}.
+ * per extra occupant from the unified OCCUPANT_EXTRAS model data -
+ * each Occupant record decodes its own channel geometry via
+ * footprint(). Used for byte / byte_panel / half_panel / flat_pane;
+ * the positional panel model emits the same list through
+ * {@link #emitExtras}.
  */
 public class ContourMultipartModel extends ContourBoxModel {
-
-	public record PanelExtra(int slot, int kind, BlockState material) {
-	}
-
-	public record PaneExtra(int axis, BlockState material) {
-	}
-
-	public static final ModelProperty<List<PanelExtra>> PANEL_EXTRAS =
-		new ModelProperty<>();
-
-	public static final ModelProperty<List<PaneExtra>> PANE_EXTRAS =
-		new ModelProperty<>();
 
 	public ContourMultipartModel(BakedModel original,
 		@Nullable BlockState boundState, @Nullable BlockState boundMaterial,
@@ -46,40 +33,47 @@ public class ContourMultipartModel extends ContourBoxModel {
 	}
 
 	/**
-	 * Occupant quads for one host model. UV anchoring follows the same
-	 * cell-grid rule as the base occupant (absolute pixel coordinates);
-	 * each occupant samples its own material.
+	 * Occupant quads for one host model (issue #22 unified list). UV
+	 * anchoring follows the same cell-grid rule as the base occupant
+	 * (absolute pixel coordinates); each occupant samples its own
+	 * material and emits its own channel's footprint boxes.
 	 */
 	static List<BakedQuad> emitExtras(ContourModel model,
 		@Nullable ModelData data, @Nullable Direction side, RandomSource rand,
 		@Nullable RenderType renderType) {
+		return emitExtras(model, data, side, rand, renderType, null);
+	}
+
+	/**
+	 * Same emission, skipping occupants of `skipKind` - the board model
+	 * uses this because its own per-face loop already renders BOARD
+	 * records with the neutral-pass gate.
+	 */
+	static List<BakedQuad> emitExtras(ContourModel model,
+		@Nullable ModelData data, @Nullable Direction side, RandomSource rand,
+		@Nullable RenderType renderType,
+		@Nullable net.createcontour.blockentity.ContourBlockEntity
+			.OccupantKind skipKind) {
 		List<BakedQuad> out = new ArrayList<>();
+		List<net.createcontour.blockentity.ContourBlockEntity.Occupant> extras =
+			data == null ? null : data.get(ContourModel.OCCUPANT_EXTRAS);
+		if (extras == null)
+			return out;
 		// Issue #19: each occupant's boundary faces blend toward
 		// same-material Contour neighbors on the occupant's own paint.
-		List<PanelExtra> panels = data == null ? null : data.get(PANEL_EXTRAS);
-		if (panels != null)
-			for (PanelExtra e : panels)
-				out.addAll(model.blendBoundaryQuads(ShapeQuads.emitBoxes(
-					PanelSlots.occupantBoxes(e.slot(), e.kind()), side,
-					d -> model.sourcesFor(e.material(), d, rand,
-						ModelData.EMPTY, renderType)),
-					side, e.material(),
-					d -> model.sourcesFor(e.material(), d, rand,
-						ModelData.EMPTY, renderType),
-					rand, data, renderType));
-		List<PaneExtra> panes = data == null ? null : data.get(PANE_EXTRAS);
-		if (panes != null)
-			for (PaneExtra e : panes)
-				out.addAll(model.blendBoundaryQuads(ShapeQuads.emitBoxes(
-					net.createcontour.block.ContourFlatPaneBlock
-						.boxesForAxis(e.axis()),
-					side,
-					d -> model.sourcesFor(e.material(), d, rand,
-						ModelData.EMPTY, renderType)),
-					side, e.material(),
-					d -> model.sourcesFor(e.material(), d, rand,
-						ModelData.EMPTY, renderType),
-					rand, data, renderType));
+		for (net.createcontour.blockentity.ContourBlockEntity.Occupant e
+			: extras) {
+			if (e.kind() == skipKind)
+				continue;
+			out.addAll(model.blendBoundaryQuads(ShapeQuads.emitBoxes(
+				e.footprint(), side,
+				d -> model.sourcesFor(e.material(), d, rand,
+					ModelData.EMPTY, renderType)),
+				side, e.material(),
+				d -> model.sourcesFor(e.material(), d, rand,
+					ModelData.EMPTY, renderType),
+				rand, data, renderType));
+		}
 		return out;
 	}
 

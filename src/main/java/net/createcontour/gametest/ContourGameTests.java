@@ -1264,12 +1264,14 @@ public class ContourGameTests {
 				"occupants lost in save/load");
 
 			// writeSafe exports occupants with exactly the charged units
+			// (issue #22 unified "Occupants" list: Kind/Slot/Material/Paid)
 			CompoundTag safe = new CompoundTag();
 			be2.writeSafe(safe, h.getLevel().registryAccess());
-			var extras = safe.getList("ByteExtras",
+			var extras = safe.getList("Occupants",
 				net.minecraft.nbt.Tag.TAG_COMPOUND);
 			h.assertTrue(extras.size() == 1
-				&& extras.getCompound(0).getInt("Octant") == 7
+				&& "byte".equals(extras.getCompound(0).getString("Kind"))
+				&& extras.getCompound(0).getInt("Slot") == 7
 				&& extras.getCompound(0).getInt("Paid") == 1,
 				"writeSafe dropped occupants or paid");
 

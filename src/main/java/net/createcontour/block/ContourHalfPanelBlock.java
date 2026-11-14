@@ -70,11 +70,11 @@ public class ContourHalfPanelBlock extends ContourBlock {
 		VoxelShape s = Shapes.empty();
 		for (float[] b : boxesFor(state))
 			s = Shapes.or(s, Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
+		// issue #22: union EVERY extra occupant's boxes (any kind).
 		if (level.getBlockEntity(pos) instanceof ContourBlockEntity be)
-			for (ContourBlockEntity.PanelOccupant occ : be.getPanelOccupants())
-				for (float[] b : PanelSlots.occupantBoxes(occ.slot(), occ.kind()))
-					s = Shapes.or(s,
-						Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
+			for (float[] b : be.extraFootprintBoxes())
+				s = Shapes.or(s,
+					Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
 		return s;
 	}
 
@@ -83,10 +83,10 @@ public class ContourHalfPanelBlock extends ContourBlock {
 		return true;
 	}
 
-	/** Merge eligibility: family item + disjoint slot claim (PanelSlots). */
+	/** Merge eligibility (issue #22): universal geometric gate. */
 	@Override
 	public boolean canBeReplaced(BlockState state, BlockPlaceContext ctx) {
-		return PanelSlots.canMergeReplace(state, ctx);
+		return ContourBlockEntity.canMergeInto(ctx);
 	}
 
 	@Override
@@ -96,7 +96,7 @@ public class ContourHalfPanelBlock extends ContourBlock {
 		net.minecraft.world.entity.player.Player player,
 		net.minecraft.world.InteractionHand hand,
 		net.minecraft.world.phys.BlockHitResult hit) {
-		return usePanelOccupantItemOn(stack, state, level, pos, player, hand,
+		return useOccupantItemOn(stack, state, level, pos, player, hand,
 			hit);
 	}
 
@@ -167,7 +167,8 @@ public class ContourHalfPanelBlock extends ContourBlock {
 	protected BlockState wrenchTarget(BlockState state, ContourBlockEntity be) {
 		// Occupant #0 cycles perpendicular halves only, skipping pairs
 		// claimed by extra occupants (also avoids face-parallel halves,
-		// which produce degenerate geometry).
+		// which produce degenerate geometry) and geometry overlapping
+		// different-kind occupants (issue #22).
 		if (be == null)
 			return state.cycle(HALF);
 		java.util.Set<Integer> occupied = be.occupiedPanelSlots();
@@ -182,7 +183,10 @@ public class ContourHalfPanelBlock extends ContourBlock {
 				continue;
 			if (java.util.Collections.disjoint(occupied,
 				PanelSlots.slots(PanelSlots.id(face, hid),
-					PanelSlots.KIND_HALF_PANEL)))
+					PanelSlots.KIND_HALF_PANEL))
+				&& be.crossKindClear(
+					ContourBlockEntity.OccupantKind.PANEL,
+					boxesFor(face, half)))
 				return state.setValue(HALF, half);
 		}
 		return state;
