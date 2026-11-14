@@ -79,6 +79,17 @@ public abstract class ContourBlock extends WaterloggedCopycatBlock {
 		return 1;
 	}
 
+	/**
+	 * Whole material items billed for this state's paint and refunded
+	 * per unit on break/repaint. Defaults to one item per host unit;
+	 * shapes billed at a fraction of a unit override - contour_layers
+	 * bills floor(LAYERS/8): eight 2px layers = one material item, so
+	 * sub-full stacks paint free in whole-item terms (issue #20).
+	 */
+	public int materialUnits(BlockState state) {
+		return hostUnits(state);
+	}
+
 	// --- placement: suppress inherited offhand paint; MaterialPolicy owns it ---
 
 	@Override

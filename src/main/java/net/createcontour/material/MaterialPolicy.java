@@ -15,7 +15,9 @@ import org.jetbrains.annotations.Nullable;
  * Atomic server-authoritative paint accounting.
  *
  * - consumeMaterial ON + survival: a paint that changes the material costs
- *   one matching material item per host shape unit. OFF or creative: zero.
+ *   one matching material item per material unit (one per host unit on
+ *   most shapes; contour_layers bills one per eight layers - issue #20).
+ *   OFF or creative: zero.
  * - Same-material (same block) repaint/re-axis: free, ledger unchanged.
  * - INVALID input (null/air/recursive/BE/unregistered) returns false and
  *   leaves material, ledger and inventory untouched - clearing paint is a
@@ -158,7 +160,8 @@ public final class MaterialPolicy {
 			be.setMaterial(sanitized); // free re-axis, ledger untouched
 			return true;
 		}
-		int required = ContourConfig.consumeMaterial() ? be.hostUnits() : 0;
+		int required = ContourConfig.consumeMaterial()
+			? be.materialUnits() : 0;
 		boolean creative = player != null && player.getAbilities().instabuild;
 		if (required > 0 && player == null)
 			return false; // automation may not mint free materials

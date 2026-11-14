@@ -132,6 +132,18 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 				+ panelOccupants.size() + paneOccupants.size() : 1;
 	}
 
+	/**
+	 * Whole material items the HOST state's paint is billed at: the
+	 * block's materialUnits hook (contour_layers bills one item per
+	 * eight layers - issue #20 - so painted stacks under size 8 carry
+	 * zero billed credit). Extra occupants bill their own per-occupant
+	 * paid fields separately, one item each.
+	 */
+	public int materialUnits() {
+		return getBlockState().getBlock() instanceof ContourBlock cb
+			? cb.materialUnits(getBlockState()) : 1;
+	}
+
 	// --- issue #4: extra Byte occupants (occupant #0 stays in
 	// blockstate OCTANT + material + paidUnits, so old saves are
 	// byte-for-byte compatible) ---
@@ -375,17 +387,22 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 	/**
 	 * Schematic checklist contribution, UNIONED by Create with its default
 	 * host-item entry (1x block item, or 2x for SLAB_TYPE=DOUBLE). We add:
-	 * the copied material at one unit per host unit (consume-on only), plus
+	 * the copied material at one item per material unit (consume-on only;
+	 * contour_layers bills one item per eight layers - issue #20), plus
 	 * any extra host units Create's default does not cover (multi-unit
 	 * hosts like LAYERS/SLICE counts beyond the slab-double special case).
 	 */
 	@Override
 	public ItemRequirement getRequiredItems(BlockState state) {
 		java.util.List<ItemStack> stacks = new java.util.ArrayList<>();
+		// Material is billed per MATERIAL unit (one item per host unit on
+		// most shapes; contour_layers bills one item per eight layers, so
+		// painted stacks under size 8 contribute no material entry).
 		int blockUnits = state.getBlock()
 			instanceof net.createcontour.block.ContourBlock cb2
-				? cb2.hostUnits(state) : 1;
+				? cb2.materialUnits(state) : 1;
 		if (hasCustomMaterial() && ContourConfig.consumeMaterial()
+			&& blockUnits > 0
 			&& !material.getBlock().asItem().getDefaultInstance().isEmpty()) {
 			stacks.add(new ItemStack(material.getBlock().asItem(), blockUnits));
 		}
@@ -654,7 +671,7 @@ public class ContourBlockEntity extends CopycatBlockEntity {
 			&& ContourConfig.consumeMaterial()
 				? (getBlockState().getBlock()
 					instanceof net.createcontour.block.ContourBlock cb3
-						? cb3.hostUnits(getBlockState()) : 1)
+						? cb3.materialUnits(getBlockState()) : 1)
 				: 0);
 		// Extra occupants export with paid only where the requirement
 		// above will charge one material unit at print; consume-off

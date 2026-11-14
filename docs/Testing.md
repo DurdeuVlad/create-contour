@@ -100,6 +100,7 @@ Status column values: PASS / PARTIAL / NOT RUN / BLOCKED / NOT IMPLEMENTED (hone
 | Milestone-1 issues #3/#4: native `useItemOn` repaint route (dirt->stone on byte/slab/panel, offhand override, refunds) | GH #3 | L2 | PASS (`repaintNativeRoute` GameTest, 146/146 run 17:13) |
 | Byte octant composition (ADR-016a): disjoint add/refuse, per-occupant paint+paid, union shape, 1 blank/occupant drops, per-occupant schematic requirement, save/load + `writeSafe` round-trip, item-route merge, wrench skips occupied octants | GH #4 | L2 | PASS (`byteComposition` GameTest, 146/146 run 17:13) |
 | Ponder tutorial real-open path (`PonderUI.of(placer)` opens, not just registry) | GH #2 | L3 | PASS (`.cache/client_qa_m3.log`: `ponder placer=true blank=true nbt=true` + `ponder OPEN ok`; 318504/0 render smoke incl. byte extras model path; physical W-keypress is a keybind concern outside this evidence) |
+| contour_layers resizable SIZE 1..8 (ADR-018): snow-style merge growth to 8 = full block, 2px/layer collision, size-scaled blank drops, whole-eighth material billing (size 8 = 1 item; sizes 1-7 free remainder), delta-billed place/merge, free regrow of paid cells, wrench top-layer removal preserving paid, schematic requirement + `writeSafe` proportional to size | GH #20 | L2 | PASS (`growthToFull`, `perSizeCollisionAndDrops`, `layerLedgerFractions`, `schematicLayers` GameTests; 155/155 required tests, `.cache/gt_i20.log`) |
 
 ## Evidence record template
 

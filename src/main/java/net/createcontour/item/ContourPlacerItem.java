@@ -86,13 +86,27 @@ public class ContourPlacerItem extends Item {
 
 	// --- gestures ---
 
-	/** First inventory slot holding contour_blank feedstock, or -1. */
-	private static int blankSlot(Player player) {
-		for (int i = 0; i < player.getInventory().items.size(); i++)
-			if (player.getInventory().items.get(i)
-				.is(ContourRegistries.CONTOUR_BLANK_ITEM.get()))
-				return i;
-		return -1;
+	/** Total contour_blank feedstock across the main inventory. */
+	private static int blankCount(Player player) {
+		int n = 0;
+		for (ItemStack s : player.getInventory().items)
+			if (s.is(ContourRegistries.CONTOUR_BLANK_ITEM.get()))
+				n += s.getCount();
+		return n;
+	}
+
+	/** Shrinks `count` blanks across inventory stacks (call AFTER the
+	 *  blankCount check so the full count is always available). */
+	private static void consumeBlanks(Player player, int count) {
+		var items = player.getInventory().items;
+		for (int i = 0; i < items.size() && count > 0; i++) {
+			ItemStack s = items.get(i);
+			if (s.is(ContourRegistries.CONTOUR_BLANK_ITEM.get())) {
+				int take = Math.min(count, s.getCount());
+				s.shrink(take);
+				count -= take;
+			}
+		}
 	}
 
 	/**
@@ -119,8 +133,12 @@ public class ContourPlacerItem extends Item {
 		if (!state.canSurvive(level, placePos)
 			|| !level.isUnobstructed(state, placePos, CollisionContext.of(player)))
 			return InteractionResult.FAIL;
-		int slot = player.getAbilities().instabuild ? -1 : blankSlot(player);
-		if (!player.getAbilities().instabuild && slot < 0)
+		// Ammo is billed per host unit of the PROPOSED state: a multi-unit
+		// placement (e.g. an 8-stack contour_layers) consumes one blank
+		// per unit so the swoop's host-unit reclaim can never profit.
+		int units = block instanceof ContourBlock cb ? cb.hostUnits(state) : 1;
+		boolean creative = player.getAbilities().instabuild;
+		if (!creative && blankCount(player) < units)
 			return InteractionResult.FAIL; // out of feedstock
 		if (!level.setBlock(placePos, state, Block.UPDATE_ALL))
 			return InteractionResult.FAIL;
@@ -128,8 +146,8 @@ public class ContourPlacerItem extends Item {
 		SoundType snd = state.getSoundType(level, placePos, player);
 		level.playSound(player, placePos, snd.getPlaceSound(), SoundSource.BLOCKS,
 			(snd.getVolume() + 1f) / 2f, snd.getPitch() * 0.8f);
-		if (slot >= 0)
-			player.getInventory().items.get(slot).shrink(1);
+		if (!creative)
+			consumeBlanks(player, units);
 		return InteractionResult.SUCCESS;
 	}
 

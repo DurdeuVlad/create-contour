@@ -305,22 +305,35 @@ public class ContourWaveGameTests {
 	public void layersStates(GameTestHelper h) {
 		Player p = h.makeMockPlayer(GameType.SURVIVAL);
 		ContourBlockEntity be = be(h, ContourRegistries.CONTOUR_LAYERS.get()
-			.defaultBlockState().setValue(ContourLayersBlock.LAYERS, 1));
+			.defaultBlockState().setValue(ContourLayersBlock.LAYERS, 8));
 		be.applyPayload(Blocks.STONE.defaultBlockState(), 1, Direction.NORTH, false);
 		Block b = h.getBlockState(P).getBlock();
-		// wrench cycles 1..8 back to 1 in 8 uses
-		for (int want = 2; want <= 8; want++) {
+		// wrench removes the top layer (issue #20): 8 -> 7 -> ... -> 1
+		for (int want = 7; want >= 1; want--) {
 			((net.createcontour.block.ContourBlock) b).onWrenched(
 				h.getBlockState(P), wrenchCtx(h, p, Direction.UP));
 			b = h.getBlockState(P).getBlock();
 			h.assertTrue(h.getBlockState(P).getValue(ContourLayersBlock.LAYERS) == want,
-				"cycle skipped " + want);
+				"wrench did not step down to " + want);
 		}
+		// at LAYERS=1 the wrench is inert - sneak-wrench is the pickup
 		((net.createcontour.block.ContourBlock) b).onWrenched(
 			h.getBlockState(P), wrenchCtx(h, p, Direction.UP));
 		h.assertTrue(h.getBlockState(P).getValue(ContourLayersBlock.LAYERS) == 1,
-			"cycle did not wrap");
-		h.assertTrue(be.getPaidUnits() == 1, "cycle lost ledger");
+			"wrench removed the last layer");
+		// ledger preserved across shrink: the paid unit is a real charge
+		// that stays refundable on break; each removed layer dropped one
+		// blank frame (7 layers out of 8 back as items). Re-fetch: each
+		// wrench swapped the BE instance.
+		ContourBlockEntity shrunk = (ContourBlockEntity) h.getLevel()
+			.getBlockEntity(h.absolutePos(P));
+		h.assertTrue(shrunk.getPaidUnits() == 1, "shrink lost paid ledger");
+		h.assertTrue(shrunk.getMaterial().getBlock() == Blocks.STONE,
+			"shrink lost paint");
+		h.assertTrue(p.getInventory().countItem(
+			ContourRegistries.CONTOUR_LAYERS_ITEM.get()) == 7,
+			"removed layers not dropped: " + p.getInventory()
+				.countItem(ContourRegistries.CONTOUR_LAYERS_ITEM.get()));
 		// placement: click height -> thickness
 		for (int i = 1; i <= 8; i++) {
 			Vec3 hit = new Vec3(h.absolutePos(P).getX() + 0.5,
@@ -2758,23 +2771,37 @@ public class ContourWaveGameTests {
 			p.getInventory().clearContent();
 			ContourBlockEntity be = be(h, b.defaultBlockState());
 			be.applyPayload(Blocks.STONE.defaultBlockState(), 1, Direction.NORTH, false);
+			int wantUnits = be.hostUnits();
+			int wantPaid = be.getPaidUnits();
 			h.getLevel().destroyBlock(h.absolutePos(P), true, p);
 			var box = new net.minecraft.world.phys.AABB(h.absolutePos(P)).inflate(3);
 			var items = h.getLevel().getEntities(
 				net.minecraft.world.entity.EntityType.ITEM, box,
 				e -> e.getItem().getItem() instanceof ContourBlockItem);
-			h.assertTrue(items.size() == 1, b + " dropped " + items.size());
-			var s = items.get(0).getItem();
-			h.assertTrue(ContourBlockItem.storedMaterial(h.getLevel().registryAccess(), s)
-				== null && ContourBlockItem.storedPaid(s) == 0,
-				b + " dropped a painted item");
+			// one blank per host unit (contour_layers defaults to 4) -
+			// entities may stack-merge, so compare summed counts
+			int blankCount = 0;
+			for (var e : items) {
+				blankCount += e.getItem().getCount();
+				h.assertTrue(ContourBlockItem.storedMaterial(
+						h.getLevel().registryAccess(), e.getItem()) == null
+						&& ContourBlockItem.storedPaid(e.getItem()) == 0,
+					b + " dropped a painted item");
+			}
+			h.assertTrue(blankCount == wantUnits,
+				b + " blank drops " + blankCount + " != units " + wantUnits);
 			var mats = h.getLevel().getEntities(
 				net.minecraft.world.entity.EntityType.ITEM, box,
 				e -> e.getItem().is(net.minecraft.world.item.Items.STONE));
-			h.assertTrue(mats.size() == 1 && mats.get(0).getItem().getCount() == 1,
-				b + " did not refund material");
-			items.get(0).discard();
-			mats.get(0).discard();
+			int matCount = 0;
+			for (var e : mats)
+				matCount += e.getItem().getCount();
+			h.assertTrue(matCount == wantPaid,
+				b + " material refund " + matCount + " != paid " + wantPaid);
+			for (var e : items)
+				e.discard();
+			for (var e : mats)
+				e.discard();
 		}
 		h.succeed();
 	}
