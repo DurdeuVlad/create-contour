@@ -1069,26 +1069,6 @@ public class ContourGameTests {
 	}
 
 	@GameTest(template = "test_empty")
-	public void codexEmitsBlank(GameTestHelper h) {
-		// Shape items never carry paint: codex emits blank stacks even
-		// when the payload names a material.
-		ItemStack out = net.createcontour.network.ContourNetwork.buildCodexTemplate(
-			new ItemStack(ContourRegistries.CONTOUR_SLAB_ITEM.get()),
-			Blocks.STONE.defaultBlockState());
-		h.assertTrue(ContourBlockItem.storedPaid(out) == 0
-			&& ContourBlockItem.storedMaterial(
-				h.getLevel().registryAccess(), out) == null,
-			"codex grant carried paint payload");
-		ItemStack blank = net.createcontour.network.ContourNetwork.buildCodexTemplate(
-			new ItemStack(ContourRegistries.CONTOUR_STAIRS_ITEM.get()), null);
-		h.assertTrue(ContourBlockItem.storedPaid(blank) == 0
-			&& ContourBlockItem.storedMaterial(
-				h.getLevel().registryAccess(), blank) == null,
-			"blank codex grant carried payload");
-		h.succeed();
-	}
-
-	@GameTest(template = "test_empty")
 	public void placementRollbackSnapshot(GameTestHelper h) {
 		Player p = player(h);
 		// Occupied cell, no valid target: placement must FAIL with the held

@@ -9,7 +9,7 @@ displayName = "Create: Contour"
 description = '''Create-native shape blocks for builders: 114 paintable forms -
 slabs, stairs, panels, slopes, doors, sliding and folding doors, catwalks and
 more - that copy any neighbor block's material. Includes the Contour Placer
-and Codex, wrench cycling, waterlogging, and schematic support.'''
+and Placer selector, wrench cycling, waterlogging, and schematic support.'''
 authors = "DurdeuVlad"
 logoFile = "logo.png"
 logoBlur = false

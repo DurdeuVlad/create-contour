@@ -757,7 +757,7 @@ public final class ContourClient {
 				|| Minecraft.getInstance().level == null
 				|| Minecraft.getInstance().player == null)
 				return;
-			if (visualStage > 0 && visualStage < GALLERY_LAST_STAGE) {
+			if (visualStage > 0 && visualStage < SMOKE_LAST_STAGE) {
 				if (++visualTicks > (visualStage == 1 ? 60 : 30)) {
 					visualTicks = 0;
 					visualStage++;
@@ -810,12 +810,24 @@ public final class ContourClient {
 									GALLERY_NAMES.length);
 						}
 					}
+					case 17 -> {
+						var mc = Minecraft.getInstance();
+						var gun = new net.minecraft.world.item.ItemStack(
+							ContourRegistries.CONTOUR_PLACER.get());
+						net.createcontour.item.ContourPlacerItem.setShape(gun,
+							net.minecraft.core.registries.BuiltInRegistries.ITEM
+								.getKey(ContourRegistries.CONTOUR_CORNER_SLOPE_ITEM
+									.get()));
+						mc.player.setItemInHand(
+							net.minecraft.world.InteractionHand.MAIN_HAND, gun);
+					}
+					case 18 -> grab("placer-firstperson");
 					default -> {
 					}
 				}
 				return;
 			}
-			if (visualStage >= GALLERY_LAST_STAGE && ponderOpenStage >= 0) {
+			if (visualStage >= SMOKE_LAST_STAGE && ponderOpenStage >= 0) {
 				ponderOpen(com.mojang.logging.LogUtils.getLogger());
 				return;
 			}
@@ -914,6 +926,9 @@ public final class ContourClient {
 	private static final int GALLERY_SHOT_STAGE = 10;
 	private static final int GALLERY_LAST_STAGE =
 		GALLERY_SHOT_STAGE + GALLERY_NAMES.length - 1;
+	// stages 17-18: equip the placer with a selected shape, then a
+	// first-person capture of the angled screen + live icon decal
+	private static final int SMOKE_LAST_STAGE = GALLERY_LAST_STAGE + 2;
 
 	/** Frames mate-pair group i: SSE of the pair, looking north-west.
 	 *  The feet y is just above the gallery floor so the shot works

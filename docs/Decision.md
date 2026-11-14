@@ -309,6 +309,12 @@ until the owner approves them.
   - The paid ledger stays on the world block entity only: it records
     whether the applied paint was charged, which drives the refund.
   - Codex emits blank shapes only; its material strip is removed.
+- RETIRED (2026-11-14): the `contour_codex` item, screen, and select
+  payload are removed. The Contour Placer owns shape selection
+  (sneak+RMB -> placer screen -> PlacerSelectPayload); the codex's
+  blank-template grant was convenience-only and is subsumed by
+  placer ammo handling. Saves containing a codex get a missing-item
+  registry warning - acceptable at alpha.
   - Placement still resolves paint from offhand then clicked-block
     look (escrowed, charged once); painting a placed shape with a held
     BlockItem via MaterialPolicy is unchanged.

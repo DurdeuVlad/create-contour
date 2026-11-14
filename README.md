@@ -13,7 +13,6 @@ contraptions and builds can take any shape in any material.
   configure the target shape on its rear display, left-click to place,
   right-click to swoop a placed shape back into blank ammo and refund its
   material.
-- **Contour Codex** - an in-world guide documenting every shape and gesture.
 - **Real builder QoL** - wrench orientation cycling, snow-style stacking for
   layers/half-layers/slices, waterlogging, paint-mismatch merge rules, and
   paired doors (normal, iron/redstone-only, sliding, folding).

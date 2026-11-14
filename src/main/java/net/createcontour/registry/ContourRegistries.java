@@ -120,7 +120,6 @@ import net.createcontour.block.ContourWheelBlock;
 import net.createcontour.blockentity.ContourBlockEntity;
 import net.createcontour.item.ContourBlockItem;
 import net.minecraft.world.item.BlockItem;
-import net.createcontour.item.ContourCodexItem;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
@@ -780,10 +779,6 @@ public final class ContourRegistries {
 		ITEMS.register("contour_catwalk",
 			() -> new ContourBlockItem(CONTOUR_CATWALK.get()));
 
-	public static final DeferredItem<ContourCodexItem> CONTOUR_CODEX =
-		ITEMS.register("contour_codex", () -> new ContourCodexItem(
-			new net.minecraft.world.item.Item.Properties().stacksTo(1)));
-
 	/**
 	 * Placer feedstock: the "basic block" the place gun consumes - a
 	 * plain neutral cube, NOT a ContourBlock (no material copying, no
@@ -982,7 +977,6 @@ public final class ContourRegistries {
 				output.accept(CONTOUR_SLIDING_DOOR_ITEM.get());
 				output.accept(CONTOUR_FOLDING_DOOR_ITEM.get());
 				output.accept(CONTOUR_CATWALK_ITEM.get());
-				output.accept(CONTOUR_CODEX.get());
 				output.accept(CONTOUR_BLANK_ITEM.get());
 				output.accept(CONTOUR_PLACER.get());
 			})
