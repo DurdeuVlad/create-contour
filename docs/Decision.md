@@ -480,6 +480,57 @@ until the owner approves them.
   anchored UVs (texture) + declared mates (intent).
 - Spec surface: docs/Continuation.md (vocabulary + mate tables).
 
+## ADR-018: contour_layers SIZE semantics - per-eighth billing, top-layer wrench
+
+- Status: accepted implementation semantics (issue #20, 2026); binding
+  on `contour_layers` only - every other shape keeps the flat
+  `materialUnits = hostUnits` rule from ADR-013.
+- Context: `contour_layers` is a resizable snow-style plate (LAYERS
+  1..8, 2px per layer, 8 = full block). The issue contract bills
+  material at 1/8 of the full block cost per layer, but Minecraft item
+  stacks are integers - a literal fractional ledger is impossible, so
+  the eighth resolves as whole-item billing at the 8-layer boundary.
+- Property/geometry: `layers` 1..8 (name kept for parity with slice /
+  half_layer / corner_slice). Shape is a single AABB 0..2*LAYERS px;
+  collision, baked model, light occlusion (`< 8`), and drops all key
+  on the same value.
+- Host units: `hostUnits(state) = LAYERS`. Each layer is one blank
+  frame unit - break drops, sneak-wrench pickup, schematic host-item
+  requirements, placer ammo billing, and placer swoop reclaim all
+  scale 1:1 with size.
+- Material units: `materialUnits(state) = floor(LAYERS / 8)`.
+  Material is billed and refunded in whole items only: a full 8-layer
+  block costs one material item to paint and refunds one on break;
+  sizes 1-7 paint free (the fraction rounds to zero). The free
+  remainder is deliberate - it can never become a material source
+  because refunds only ever return recorded paid units.
+- Placement billing is delta-based: the charge is
+  `materialUnits(proposed) - max(materialUnits(before), paidAlready)`.
+  Only the placement or merge that completes an unpaid 8-stack is
+  charged; growth below the boundary is free, and regrowing a cell
+  that already paid its whole-eighth is free.
+- Merge: clicking an existing plate with the same-kind item and the
+  same full paint grows it +1 via `canBeReplaced`, capped at 8; paint
+  mismatches fall through to adjacent placement like the slab.
+- Wrench removes the TOP layer (chosen over cycling: decrement is the
+  inverse of growth, and it never silently destroys recorded credit).
+  Each removal drops one blank frame; at LAYERS=1 the wrench is inert
+  (sneak-wrench is the pickup). The paid ledger is PRESERVED across
+  the shrink - paid units are real historical charges that stay
+  refundable on break. This keeps the catalog-wide "one wrench use
+  preserves material + paid" invariant every other shape obeys.
+- Schematic: `getRequiredItems` charges `materialUnits` material items
+  plus `LAYERS - 1` extra blank host items (Create unions the default
+  1x host item itself); `writeSafe` exports
+  `PaidUnits = materialUnits` under consume-on, so a printed block
+  refunds exactly what the cannon charged and free paint can never
+  round-trip into a refund.
+- Consequences: a painted partial stack (sizes 1-7) is genuinely free
+  paint - documented remainder policy, not an exploit. Shrinking a
+  paid block does not refund early; the charge releases on break.
+- Evidence: `growthToFull`, `perSizeCollisionAndDrops`,
+  `layerLedgerFractions`, `schematicLayers` GameTests.
+
 ## Open decisions (tracked, not resolved)
 
 | ID | Question | Where resolved |

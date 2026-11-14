@@ -254,10 +254,29 @@ public class ContourBlockItem extends BlockItem {
 		boolean paidTransfer = !creative && preMaterial != null
 			&& !MaterialSafety.isNeutral(preMaterial) && prePaid > 0;
 		// A template (unpaid, non-neutral incoming material) with consume ON
-		// + survival reserves ONE unit up front - for fresh paint AND merge.
-		int cost = !level.isClientSide && !creative && !paidTransfer
+		// + survival reserves the billed units up front - for fresh paint
+		// AND merge. contour_layers bills per whole eighth (issue #20):
+		// the charge is the grown state's materialUnits minus what the
+		// clicked cell already BILLED OR PAID, so only the placement/merge
+		// that completes an unpaid 8-stack is charged; sub-full stacks
+		// paint free (fractional billing is impossible, so the remainder
+		// rounds to zero - never a source).
+		int cost = 0;
+		if (!level.isClientSide && !creative && !paidTransfer
 			&& ContourConfig.consumeMaterial() && incoming != null
-			&& !MaterialSafety.isNeutral(incoming) ? 1 : 0;
+			&& !MaterialSafety.isNeutral(incoming)) {
+			if (getBlock() instanceof net.createcontour.block.ContourLayersBlock layersBlock) {
+				BlockState proposed = layersBlock.getStateForPlacement(context);
+				int newUnits = proposed != null && proposed.is(layersBlock)
+					? layersBlock.materialUnits(proposed) : 0;
+				int already = beforeState.is(layersBlock)
+					? Math.max(layersBlock.materialUnits(beforeState), mergePaid)
+					: 0;
+				cost = Math.max(0, newUnits - already);
+			} else {
+				cost = 1;
+			}
+		}
 		Reservation res = null;
 		if (cost > 0) {
 			if (player == null)
@@ -386,7 +405,8 @@ public class ContourBlockItem extends BlockItem {
 			// PREPAID transfer: ledger moves once, no charge.
 			cbe.applyPayload(preMaterial, 1, facing, top);
 		} else if (incoming != null && !MaterialSafety.isNeutral(incoming)) {
-			cbe.applyPayload(incoming, res != null ? 1 : 0, facing, top);
+			cbe.applyPayload(incoming, res != null ? res.totalCount() : 0,
+				facing, top);
 		} else {
 			// Neutral placement: imported vanilla BE data must not leave
 			// operational credit behind.
