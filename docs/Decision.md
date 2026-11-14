@@ -544,28 +544,48 @@ until the owner approves them.
 
 ## ADR-018: Universal host - one occupant model for all channels
 
-- Status: accepted 2026-11-14 (milestone v0.4.0, issue #22)
+- Status: accepted 2026-11-14 (milestone v0.4.0, issue #22);
+  implemented on branch `issue/22-unihost`
 - Context: ADR-016a shipped three parallel channels - ByteOccupant
   (octant), PanelOccupant (face-quadrant), PaneOccupant (interior
-  axis). Three record types, three NBT extras, three render extras
-  duplicate one idea: a cell hosts disjoint occupants.
+  axis); issue #24 added a fourth (BoardOccupant, face shell). Four
+  record types, four NBT extras, four render extras duplicate one
+  idea: a cell hosts disjoint occupants.
 - Decision: unify into one host model. `ContourBlockEntity` holds a
   single `Occupant` list; every occupant is (kind, slot, material,
   paid) where kind is BYTE/PANEL/PANE/BOARD and slot is
-  channel-specific (octant 0-7, face-quadrant 0-23, axis X/Y/Z, face
-  0-5). Occupant #0 remains in blockstate (legacy path unchanged).
-- Placement: clicking a Contour cell with a Contour shape item checks
-  GEOMETRIC overlap only - the candidate's occupied voxels vs all
-  occupants' voxels. Disjoint -> merge as an occupant regardless of
-  kind. Occupancy channels become a render/serialization concern, not
-  a placement constraint.
+  channel-specific (octant 0-7, face-quadrant encoded as
+  `subKind*24+faceSlot` 0-71, axis X/Y/Z 0-2, face 0-5). Occupant #0
+  remains in blockstate (legacy path unchanged).
+- Placement: clicking a Contour cell with a Contour shape item
+  resolves an `OccupantSpec` (kind+slot) and checks TWO layers:
+  (a) the intra-kind lattice claim - octants form a set, panel slot
+  claims are disjoint, pane axes are exclusive, board faces are
+  unique - and (b) CROSS-KIND geometric disjointness: the candidate's
+  occupied boxes must not intersect any different-kind occupant's
+  boxes or a different-kind host's own footprint. Same-kind
+  co-residence keeps each channel's documented semantics (pane sheets
+  on different axes still cross by design; face plates on adjacent
+  faces still share edge corners) - a pure overlap-everything rule
+  would have destroyed them. Refinement recorded during
+  implementation; the ADR's "geometric only" wording applies to the
+  cross-kind gate.
 - Consequences: boards (#24), slope slices, and future occupant kinds
   become occupants without new channels; per-occupant drops/
-  requirements/writeSafe/paint/wrench run one path instead of three;
-  cross-kind co-residence (byte + panel + board in one cell) becomes
-  legal iff disjoint.
-- Migration: read legacy ByteExtras/PanelExtras/PaneExtras into the
-  unified list on load; write the unified Occupants NBT. Old saves
-  keep working; new saves are forward-only past this version.
-- Rejected: per-kind parallel lists (triple bookkeeping); free-form
-  geometry placement (ADR-016 already rejected non-lattice geometry).
+  requirements/writeSafe/paint/wrench run one path instead of four;
+  cross-kind co-residence (byte + panel + board in one cell) is legal
+  iff disjoint. Extras exist only on the four multipart host families
+  (byte, byte_panel/half_panel/panel, flat_pane, board) - their
+  models emit occupant quads and their shapes union occupant boxes.
+  A BOARD record on a board host requires the face flag present (the
+  flag is the channel's claim surface); on a non-board host the
+  record carries the face shell directly.
+- Migration: read legacy ByteExtras/PanelExtras/PaneExtras/
+  BoardExtras into the unified list on load (every entry re-passes
+  the insertion gate, so malformed/overlapping records still drop);
+  write only the unified `Occupants` NBT ({Kind, Slot, Material,
+  Paid}). Old saves keep working; new saves are forward-only.
+- Rejected: per-kind parallel lists (quadruple bookkeeping); free-form
+  geometry placement (ADR-016 already rejected non-lattice geometry);
+  geometric-only gating for same-kind claims (would break pane
+  crossing and plate corner-sharing).

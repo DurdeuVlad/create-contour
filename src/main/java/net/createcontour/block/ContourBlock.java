@@ -156,29 +156,29 @@ public abstract class ContourBlock extends WaterloggedCopycatBlock {
 		return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 	}
 
-	// --- issue #12: multipart per-occupant paint targeting ---
+	// --- issue #22: universal per-occupant paint targeting ---
 
 	/**
-	 * Panel-channel paint targeting: the hit's local position is tested
-	 * against each extra occupant's boxes (extras first, so shared seams
-	 * stay paintable); a miss falls through to the owned host-paint path
-	 * (occupant #0 in blockstate), mirroring ContourByteBlock.
+	 * Unified occupant paint targeting (issue #22): the hit's local
+	 * position is tested against EVERY extra occupant's footprint
+	 * (extras first, so shared seams stay paintable); a miss falls
+	 * through to the owned host-paint path (occupant #0 in blockstate).
+	 * Kind-specific targeting survives only inside the record's own
+	 * footprint().
 	 */
-	protected ItemInteractionResult usePanelOccupantItemOn(ItemStack stack,
+	protected ItemInteractionResult useOccupantItemOn(ItemStack stack,
 		BlockState state, Level level, BlockPos pos, Player player,
 		InteractionHand hand, BlockHitResult hit) {
 		if (!(level.getBlockEntity(pos) instanceof ContourBlockEntity be)
-			|| be.getPanelOccupants().isEmpty())
+			|| be.getOccupants().isEmpty())
 			return hostPaintItemOn(stack, state, level, pos, player, hand,
 				hit);
 		Vec3 local = hit.getLocation()
 			.subtract(Vec3.atLowerCornerOf(pos));
 		int idx = -1;
-		var occ = be.getPanelOccupants();
+		var occ = be.getOccupants();
 		for (int i = 0; i < occ.size(); i++) {
-			ContourBlockEntity.PanelOccupant o = occ.get(i);
-			if (PanelSlots.inBoxes(
-				PanelSlots.occupantBoxes(o.slot(), o.kind()), local)) {
+			if (PanelSlots.inBoxes(occ.get(i).footprint(), local)) {
 				idx = i;
 				break;
 			}
@@ -186,63 +186,19 @@ public abstract class ContourBlock extends WaterloggedCopycatBlock {
 		if (idx < 0)
 			return hostPaintItemOn(stack, state, level, pos, player, hand,
 				hit);
-		if (level.isClientSide)
-			return getAcceptedBlockState(level, pos, stack, hit.getDirection()) != null
-				? ItemInteractionResult.sidedSuccess(true)
-				: ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-		BlockState accepted = getAcceptedBlockState(level, pos, stack,
+		return paintOccupantAt(be, idx, stack, level, pos, player,
 			hit.getDirection());
-		if (accepted == null)
-			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-		ContourBlockEntity.PanelOccupant o = be.getPanelOccupants().get(idx);
-		final int target = idx;
-		return paintExtraOccupant(accepted, player, o.material(), o.paid(),
-			(mat, paid) -> be.paintPanelOccupant(target, mat, paid));
-	}
-
-	/** Same targeting for the flat-pane interior-axis channel. */
-	protected ItemInteractionResult usePaneOccupantItemOn(ItemStack stack,
-		BlockState state, Level level, BlockPos pos, Player player,
-		InteractionHand hand, BlockHitResult hit) {
-		if (!(level.getBlockEntity(pos) instanceof ContourBlockEntity be)
-			|| be.getPaneOccupants().isEmpty())
-			return hostPaintItemOn(stack, state, level, pos, player, hand,
-				hit);
-		Vec3 local = hit.getLocation()
-			.subtract(Vec3.atLowerCornerOf(pos));
-		int idx = -1;
-		var occ = be.getPaneOccupants();
-		for (int i = 0; i < occ.size(); i++) {
-			if (PanelSlots.inBoxes(ContourFlatPaneBlock
-				.boxesForAxis(occ.get(i).axis()), local)) {
-				idx = i;
-				break;
-			}
-		}
-		if (idx < 0)
-			return hostPaintItemOn(stack, state, level, pos, player, hand,
-				hit);
-		if (level.isClientSide)
-			return getAcceptedBlockState(level, pos, stack, hit.getDirection()) != null
-				? ItemInteractionResult.sidedSuccess(true)
-				: ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-		BlockState accepted = getAcceptedBlockState(level, pos, stack,
-			hit.getDirection());
-		if (accepted == null)
-			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-		ContourBlockEntity.PaneOccupant o = be.getPaneOccupants().get(idx);
-		final int target = idx;
-		return paintExtraOccupant(accepted, player, o.material(), o.paid(),
-			(mat, paid) -> be.paintPaneOccupant(target, mat, paid));
 	}
 
 	/**
-	 * Board-channel paint targeting (issue #24): the 1px face shell
-	 * under the hit identifies the face, and every present face has its
-	 * own occupant record. Boards have no host paint - the host material
-	 * is never rendered or charged - so a shell miss paints nothing. A
-	 * face flag without an occupant record (placer-set or malformed
-	 * NBT) is healed with a neutral record so the sheet stays paintable.
+	 * Board-cell paint targeting (issue #24 + #22): non-board extras
+	 * on the cell win first (their interior volumes are the only
+	 * reachable surface for them); then the board face under the click
+	 * paints its own sheet. Boards have no host paint - the host
+	 * material is never rendered or charged - so a miss paints
+	 * nothing. A face flag without an occupant record (placer-set or
+	 * malformed NBT) is healed with a neutral record so the sheet stays
+	 * paintable.
 	 */
 	protected ItemInteractionResult useBoardOccupantItemOn(ItemStack stack,
 		BlockState state, Level level, BlockPos pos, Player player,
@@ -251,6 +207,15 @@ public abstract class ContourBlock extends WaterloggedCopycatBlock {
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		Vec3 local = hit.getLocation()
 			.subtract(Vec3.atLowerCornerOf(pos));
+		var occ = be.getOccupants();
+		for (int i = 0; i < occ.size(); i++) {
+			if (occ.get(i).kind()
+				== ContourBlockEntity.OccupantKind.BOARD)
+				continue;
+			if (PanelSlots.inBoxes(occ.get(i).footprint(), local))
+				return paintOccupantAt(be, i, stack, level, pos, player,
+					hit.getDirection());
+		}
 		Direction f = ContourBoardBlock.faceAtLocal(state, local,
 			hit.getDirection());
 		if (f == null)
@@ -274,6 +239,22 @@ public abstract class ContourBlock extends WaterloggedCopycatBlock {
 		final int target = idx;
 		return paintExtraOccupant(accepted, player, o.material(), o.paid(),
 			(mat, paid) -> be.paintBoardOccupant(target, mat, paid));
+	}
+
+	/** Paint the unified occupant at index idx (server + client echo). */
+	private ItemInteractionResult paintOccupantAt(ContourBlockEntity be,
+		int idx, ItemStack stack, Level level, BlockPos pos, Player player,
+		Direction face) {
+		if (level.isClientSide)
+			return getAcceptedBlockState(level, pos, stack, face) != null
+				? ItemInteractionResult.sidedSuccess(true)
+				: ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+		BlockState accepted = getAcceptedBlockState(level, pos, stack, face);
+		if (accepted == null)
+			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+		ContourBlockEntity.Occupant o = be.getOccupants().get(idx);
+		return paintExtraOccupant(accepted, player, o.material(), o.paid(),
+			(mat, paid) -> be.paintOccupant(idx, mat, paid));
 	}
 
 	/**
@@ -404,40 +385,27 @@ public abstract class ContourBlock extends WaterloggedCopycatBlock {
 	 */
 	public List<ItemStack> ledgerDrops(BlockState state, ContourBlockEntity be) {
 		java.util.ArrayList<ItemStack> drops = new java.util.ArrayList<>();
-		// One blank per host unit: panel/pane occupants count toward
-		// hostUnits() but carry their own kind's blank item instead.
-		for (int i = 0; i < be.hostUnits() - be.getPanelOccupants().size()
-			- be.getPaneOccupants().size(); i++)
+		// issue #22 unified ledger: one blank per STATE host unit (byte
+		// cube = 1, board shell = its face count...); every extra
+		// occupant refunds its own kind's blank - EXCEPT board records
+		// on a board host, whose sheets are already inside the face
+		// count.
+		for (int i = 0; i < hostUnits(state); i++)
 			drops.add(new ItemStack(asItem()));
-		for (ContourBlockEntity.PanelOccupant o : be.getPanelOccupants())
-			drops.add(new ItemStack(PanelSlots.itemForKind(o.kind())));
-		for (ContourBlockEntity.PaneOccupant o : be.getPaneOccupants())
-			drops.add(new ItemStack(net.createcontour.registry.ContourRegistries
-				.CONTOUR_FLAT_PANE_ITEM.get()));
+		boolean boardHost = state.getBlock() instanceof ContourBoardBlock;
+		for (ContourBlockEntity.Occupant o : be.getOccupants()) {
+			if (!(boardHost
+				&& o.kind() == ContourBlockEntity.OccupantKind.BOARD))
+				drops.add(new ItemStack(o.blankItem()));
+			if (o.paid() > 0 && o.material() != null
+				&& !MaterialSafety.isNeutral(o.material()))
+				drops.add(new ItemStack(o.material().getBlock().asItem(),
+					o.paid()));
+		}
 		BlockState material = be.getMaterial();
 		int paid = be.getPaidUnits();
 		if (paid > 0 && material != null && !MaterialSafety.isNeutral(material))
 			drops.add(new ItemStack(material.getBlock().asItem(), paid));
-		for (ContourBlockEntity.ByteOccupant o : be.getByteOccupants())
-			if (o.paid() > 0 && o.material() != null
-				&& !MaterialSafety.isNeutral(o.material()))
-				drops.add(new ItemStack(o.material().getBlock().asItem(),
-					o.paid()));
-		for (ContourBlockEntity.PanelOccupant o : be.getPanelOccupants())
-			if (o.paid() > 0 && o.material() != null
-				&& !MaterialSafety.isNeutral(o.material()))
-				drops.add(new ItemStack(o.material().getBlock().asItem(),
-					o.paid()));
-		for (ContourBlockEntity.PaneOccupant o : be.getPaneOccupants())
-			if (o.paid() > 0 && o.material() != null
-				&& !MaterialSafety.isNeutral(o.material()))
-				drops.add(new ItemStack(o.material().getBlock().asItem(),
-					o.paid()));
-		for (ContourBlockEntity.BoardOccupant o : be.getBoardOccupants())
-			if (o.paid() > 0 && o.material() != null
-				&& !MaterialSafety.isNeutral(o.material()))
-				drops.add(new ItemStack(o.material().getBlock().asItem(),
-					o.paid()));
 		return drops;
 	}
 

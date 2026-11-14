@@ -63,13 +63,12 @@ public class ContourByteBlock extends ContourBlock {
 		Octant o = state.getValue(OCTANT);
 		VoxelShape shape = Block.box(o.x * 8, o.y * 8, o.z * 8,
 			o.x * 8 + 8, o.y * 8 + 8, o.z * 8 + 8);
+		// issue #22: union EVERY extra occupant's boxes (any kind), not
+		// just same-kind ones.
 		if (level.getBlockEntity(pos) instanceof ContourBlockEntity be)
-			for (ContourBlockEntity.ByteOccupant occ : be.getByteOccupants()) {
-				Octant eo = Octant.values()[occ.octant()];
+			for (float[] b : be.extraFootprintBoxes())
 				shape = net.minecraft.world.phys.shapes.Shapes.or(shape,
-					Block.box(eo.x * 8, eo.y * 8, eo.z * 8,
-						eo.x * 8 + 8, eo.y * 8 + 8, eo.z * 8 + 8));
-			}
+					Block.box(b[0], b[1], b[2], b[3], b[4], b[5]));
 		return shape;
 	}
 
@@ -86,22 +85,10 @@ public class ContourByteBlock extends ContourBlock {
 
 	@Override
 	public boolean canBeReplaced(BlockState state, BlockPlaceContext ctx) {
-		if (!(ctx.getItemInHand().getItem() instanceof ContourBlockItem)
-			|| ctx.getItemInHand().getItem() != asItem())
-			return false;
-		// NOTE: getClickedPos() is unreliable here - this very call is
-		// what BlockPlaceContext uses to decide it, so it may already
-		// return the relative (adjacent) position. Reconstruct the
-		// clicked cell from the hit point instead (nudge opposite the
-		// clicked face so we land inside the hit cell).
-		Vec3 click = ctx.getClickLocation();
-		BlockPos clicked = BlockPos.containing(click.subtract(
-			Vec3.atLowerCornerOf(ctx.getClickedFace().getNormal())
-				.scale(1.0E-4)));
-		if (!(ctx.getLevel().getBlockEntity(clicked)
-			instanceof ContourBlockEntity be))
-			return false;
-		return !be.occupiedOctants().contains(octantAt(click, clicked));
+		// issue #22: universal geometric merge gate - any Contour
+		// occupant item whose claim is legal (intra-kind lattice +
+		// cross-kind disjointness) replaces into this cell.
+		return ContourBlockEntity.canMergeInto(ctx);
 	}
 
 	@Override
@@ -136,66 +123,30 @@ public class ContourByteBlock extends ContourBlock {
 		net.minecraft.world.entity.player.Player player,
 		net.minecraft.world.InteractionHand hand,
 		net.minecraft.world.phys.BlockHitResult hit) {
-		// Paint the TARGETED octant: occupant #0 delegates to the normal
-		// path; extra occupants get the same reserve/replace/refund
-		// accounting against their own paid credit.
-		int o = octantAt(hit.getLocation(), pos);
-		if (o == state.getValue(OCTANT).ordinal())
-			return super.useItemOn(stack, state, level, pos, player, hand, hit);
-		if (!(level.getBlockEntity(pos) instanceof ContourBlockEntity be))
-			return super.useItemOn(stack, state, level, pos, player, hand, hit);
-		int idx = be.byteOccupantIndex(o);
-		if (idx < 0)
-			return super.useItemOn(stack, state, level, pos, player, hand, hit);
-		if (level.isClientSide)
-			return getAcceptedBlockState(level, pos, stack, hit.getDirection()) != null
-				? net.minecraft.world.ItemInteractionResult.sidedSuccess(true)
-				: net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-		BlockState accepted = getAcceptedBlockState(level, pos, stack,
-			hit.getDirection());
-		if (accepted == null)
-			return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-		ContourBlockEntity.ByteOccupant occ = be.getByteOccupants().get(idx);
-		BlockState newMat = net.createcontour.material.MaterialSafety
-			.sanitize(accepted);
-		boolean sameBase = occ.material() != null && occ.material().getBlock()
-			== newMat.getBlock();
-		boolean creative = player.getAbilities().instabuild;
-		boolean consume = net.createcontour.config.ContourConfig.consumeMaterial()
-			&& !sameBase && !creative;
-		net.createcontour.material.MaterialPolicy.Reservation res = null;
-		if (consume) {
-			res = net.createcontour.material.MaterialPolicy.reserve(player,
-				newMat.getBlock().asItem(), 1);
-			if (res == null)
-				return net.minecraft.world.ItemInteractionResult.FAIL;
-		}
-		be.paintByteOccupant(idx, newMat, consume ? 1 : (sameBase ? occ.paid() : 0));
-		if (!sameBase && occ.paid() > 0 && occ.material() != null
-			&& !net.createcontour.material.MaterialSafety.isNeutral(occ.material())
-			&& !creative) {
-			net.minecraft.world.item.ItemStack refund = new net.minecraft.world.item.ItemStack(
-				occ.material().getBlock().asItem(), occ.paid());
-			if (!player.getInventory().add(refund))
-				player.drop(refund, false);
-		}
-		return net.minecraft.world.ItemInteractionResult.sidedSuccess(false);
+		// issue #22: unified per-occupant paint targeting; a footprint
+		// miss falls through to the host (occupant #0) paint path.
+		return useOccupantItemOn(stack, state, level, pos, player, hand, hit);
 	}
 
 	@Override
 	protected BlockState wrenchTarget(BlockState state, ContourBlockEntity be) {
 		// Occupant #0 cycles to the next FREE octant - landing on an
-		// extra occupant's slot would collapse two units into one.
+		// extra occupant's octant would collapse two units into one, and
+		// (issue #22) the destination must also be geometrically
+		// disjoint from every different-kind occupant.
 		if (be == null)
 			return state.cycle(OCTANT);
 		java.util.Set<Integer> occupied = be.occupiedOctants();
 		Octant o = state.getValue(OCTANT);
 		for (int i = 0; i < 7; i++) {
 			o = Octant.values()[(o.ordinal() + 1) % Octant.values().length];
-			if (!occupied.contains(o.ordinal()))
+			if (!occupied.contains(o.ordinal())
+				&& be.crossKindClear(ContourBlockEntity.OccupantKind.BYTE,
+					ContourBlockEntity.occupantBoxes(
+						ContourBlockEntity.OccupantKind.BYTE, o.ordinal())))
 				return state.setValue(OCTANT, o);
 		}
-		return state; // all other octants occupied: nothing to cycle to
+		return state; // all other octants claimed: nothing to cycle to
 	}
 
 	@Override

@@ -315,116 +315,65 @@ public class ContourBlockItem extends BlockItem {
 				return InteractionResult.FAIL; // no world/stack mutation yet
 		}
 
-		// --- issue #4: Byte octant merge - click a free octant of an
-		// existing byte cell to add an occupant; no setBlock at all. ---
-		if (beforeState.getBlock() instanceof net.createcontour.block.ContourByteBlock
-			&& getBlock() == beforeState.getBlock()
-			&& beforeBe instanceof ContourBlockEntity tbe) {
-			if (level.isClientSide)
-				return InteractionResult.sidedSuccess(true);
-			if (tbe.isFrozen()) {
-				MaterialPolicy.refund(res);
-				return InteractionResult.FAIL;
-			}
-			int octant = net.createcontour.block.ContourByteBlock
-				.octantAt(context.getClickLocation(), placePos);
-			if (!tbe.occupiedOctants().contains(octant)
-				&& tbe.addByteOccupant(octant,
+		// --- issue #22: UNIVERSAL occupant merge - any Contour shape item
+		// clicked into a multipart host cell resolves an occupant spec
+		// (kind+slot); the cell accepts it when the intra-kind lattice
+		// claim is free AND the candidate boxes are geometrically
+		// disjoint from every different-kind occupant and a
+		// different-kind host's own footprint. Same-block setBlock only
+		// happens for a board-face claim on a board host (its flag IS
+		// the channel's claim surface); every other merge is a pure
+		// occupant add with no blockstate write. The place cell must BE
+		// the click's cell - when canBeReplaced routed placement
+		// adjacent instead, the hit is not inside placePos and a
+		// hit-derived slot would be meaningless. ---
+		net.minecraft.world.phys.Vec3 clickPos = context.getClickLocation();
+		BlockPos clickedCell = BlockPos.containing(clickPos.subtract(
+			net.minecraft.world.phys.Vec3.atLowerCornerOf(
+				context.getClickedFace().getNormal()).scale(1.0E-4)));
+		if (clickedCell.equals(placePos)
+			&& beforeBe instanceof ContourBlockEntity tbe
+			&& ContourBlockEntity.hostKind(beforeState) != null) {
+			ContourBlockEntity.OccupantSpec spec = ContourBlockEntity
+				.specFor(getBlock(), context.getClickedFace(),
+					clickPos, placePos);
+			if (spec != null) {
+				if (level.isClientSide)
+					return InteractionResult.sidedSuccess(true);
+				if (tbe.isFrozen()) {
+					MaterialPolicy.refund(res);
+					return InteractionResult.FAIL;
+				}
+				if (!tbe.canMergeOccupant(spec.kind(), spec.slot())) {
+					MaterialPolicy.refund(res);
+					return InteractionResult.FAIL;
+				}
+				if (spec.kind() == ContourBlockEntity.OccupantKind.BOARD
+					&& beforeState.getBlock()
+						instanceof net.createcontour.block.ContourBoardBlock) {
+					// The board channel's claim surface is blockstate:
+					// join the face flag first so the record lands
+					// against a present face.
+					Direction face = Direction.values()[spec.slot()];
+					if (!level.setBlock(placePos, beforeState.setValue(
+						net.createcontour.block.ContourBoardBlock
+							.faceProperty(face), true),
+						Block.UPDATE_ALL)) {
+						MaterialPolicy.refund(res);
+						return InteractionResult.FAIL;
+					}
+				}
+				if (tbe.addOccupant(spec.kind(), spec.slot(),
 					incoming != null ? incoming
 						: MaterialSafety.neutral(),
 					paidTransfer ? Math.min(prePaid, 1)
 						: (creative ? 0 : cost))) {
-				held.shrink(1);
-				return InteractionResult.sidedSuccess(false);
-			}
-			MaterialPolicy.refund(res);
-			return InteractionResult.FAIL;
-		}
-
-		// --- issue #12: panel face-quadrant merge - any panel-family item
-		// clicked into a panel-family cell claims face slots; disjoint
-		// claims add an occupant without touching the blockstate. ---
-		if (net.createcontour.block.PanelSlots
-			.isPanelFamily(beforeState.getBlock())
-			&& net.createcontour.block.PanelSlots.isPanelFamily(getBlock())
-			&& beforeBe instanceof ContourBlockEntity tbe) {
-			if (level.isClientSide)
-				return InteractionResult.sidedSuccess(true);
-			if (tbe.isFrozen()) {
+					held.shrink(1);
+					return InteractionResult.sidedSuccess(false);
+				}
 				MaterialPolicy.refund(res);
 				return InteractionResult.FAIL;
 			}
-			Direction face = context.getClickedFace();
-			int kind = net.createcontour.block.PanelSlots.kindOf(getBlock());
-			int slot = net.createcontour.block.PanelSlots.incomingSlot(
-				getBlock(), face, context.getClickLocation(), placePos);
-			if (slot >= 0 && tbe.addPanelOccupant(slot, kind,
-				incoming != null ? incoming : MaterialSafety.neutral(),
-				paidTransfer ? Math.min(prePaid, 1)
-					: (creative ? 0 : cost))) {
-				held.shrink(1);
-				return InteractionResult.sidedSuccess(false);
-			}
-			MaterialPolicy.refund(res);
-			return InteractionResult.FAIL;
-		}
-
-		// --- issue #12: flat-pane interior-axis merge - claims the mid
-		// plane on the clicked face's axis; same-axis exclusive. ---
-		if (beforeState.getBlock()
-			instanceof net.createcontour.block.ContourFlatPaneBlock
-			&& getBlock() == beforeState.getBlock()
-			&& beforeBe instanceof ContourBlockEntity tbe) {
-			if (level.isClientSide)
-				return InteractionResult.sidedSuccess(true);
-			if (tbe.isFrozen()) {
-				MaterialPolicy.refund(res);
-				return InteractionResult.FAIL;
-			}
-			if (tbe.addPaneOccupant(
-				context.getClickedFace().getAxis().ordinal(),
-				incoming != null ? incoming : MaterialSafety.neutral(),
-				paidTransfer ? Math.min(prePaid, 1)
-					: (creative ? 0 : cost))) {
-				held.shrink(1);
-				return InteractionResult.sidedSuccess(false);
-			}
-			MaterialPolicy.refund(res);
-			return InteractionResult.FAIL;
-		}
-
-		// --- issue #24: board face merge - click a free face of an
-		// existing board cell to add that face's sheet: the face flag
-		// joins the blockstate and its material/paid record joins the
-		// BE's board channel. ---
-		if (beforeState.getBlock()
-			instanceof net.createcontour.block.ContourBoardBlock
-			&& getBlock() == beforeState.getBlock()
-			&& beforeBe instanceof ContourBlockEntity tbe) {
-			if (level.isClientSide)
-				return InteractionResult.sidedSuccess(true);
-			if (tbe.isFrozen()) {
-				MaterialPolicy.refund(res);
-				return InteractionResult.FAIL;
-			}
-			Direction face = context.getClickedFace();
-			if (net.createcontour.block.ContourBoardBlock
-				.facePresent(beforeState, face)
-				|| !level.setBlock(placePos, beforeState.setValue(
-					net.createcontour.block.ContourBoardBlock
-						.faceProperty(face), true),
-					Block.UPDATE_ALL)) {
-				MaterialPolicy.refund(res);
-				return InteractionResult.FAIL;
-			}
-			// Same-block setBlock retains the BE: register the face's
-			// material + paid record on the existing instance.
-			tbe.addBoardOccupant(face.ordinal(),
-				incoming != null ? incoming : MaterialSafety.neutral(),
-				paidTransfer ? Math.min(prePaid, 1)
-					: (creative ? 0 : cost));
-			held.shrink(1);
-			return InteractionResult.sidedSuccess(false);
 		}
 
 		InteractionResult result = super.place(context);

@@ -15,9 +15,11 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.model.data.ModelData;
 
 /**
@@ -128,9 +130,18 @@ public class ContourBlockEntity extends CopycatBlockEntity
 	}
 
 	public int hostUnits() {
-		return getBlockState().getBlock() instanceof ContourBlock cb
-			? cb.hostUnits(getBlockState()) + byteOccupants.size()
-				+ panelOccupants.size() + paneOccupants.size() : 1;
+		if (!(getBlockState().getBlock() instanceof ContourBlock cb))
+			return 1;
+		// Occupants add one host unit each - except BOARD records on a
+		// board host: their faces are already counted inside the
+		// blockstate face count.
+		boolean boardHost = getBlockState().getBlock()
+			instanceof net.createcontour.block.ContourBoardBlock;
+		int extra = 0;
+		for (Occupant o : occupants)
+			if (o.kind() != OccupantKind.BOARD || !boardHost)
+				extra++;
+		return cb.hostUnits(getBlockState()) + extra;
 	}
 
 	/**
@@ -145,24 +156,323 @@ public class ContourBlockEntity extends CopycatBlockEntity
 			? cb.materialUnits(getBlockState()) : 1;
 	}
 
-	// --- issue #4: extra Byte occupants (occupant #0 stays in
-	// blockstate OCTANT + material + paidUnits, so old saves are
-	// byte-for-byte compatible) ---
+	// --- issue #22 / ADR-018: universal host - ONE occupant model ---
+	//
+	// Occupant #0 stays in the blockstate (legacy saves byte-for-byte);
+	// every EXTRA occupant is one record in `occupants`:
+	// (kind, slot, material, paid). The slot is channel-specific:
+	//   BYTE  -> octant 0-7
+	//   PANEL -> subKind*24 + faceSlot (subKind = PanelSlots.KIND_*,
+	//            faceSlot = face*4 + sub, 0-23)
+	//   PANE  -> axis 0/1/2 (X/Y/Z mid-plane)
+	//   BOARD -> face ordinal 0-5
+	//
+	// Legality has two layers:
+	//  1. INTRA-KIND lattice rules (unchanged semantics): octants are a
+	//     set, panel slot claims must be disjoint, pane axes are
+	//     exclusive, board faces are unique per face. Pane sheets on
+	//     different axes therefore still cross by design, and face
+	//     plates on adjacent faces still share edge corners.
+	//  2. CROSS-KIND geometric disjointness: the candidate's occupied
+	//     pixel-space boxes must not intersect any different-kind
+	//     occupant's boxes, nor a different-kind host's footprint.
+	//
+	// Only the four multipart host families (byte, panel family, flat
+	// pane, board) can hold extras - their models emit occupant quads
+	// and their shapes union occupant boxes.
+
+	public enum OccupantKind { BYTE, PANEL, PANE, BOARD }
+
+	/** One extra occupant: channel kind, channel slot, paint, paid. */
+	public record Occupant(OccupantKind kind, int slot, BlockState material,
+		int paid) {
+		/** Occupied pixel-space boxes (0-16 cell coords). */
+		public java.util.List<float[]> footprint() {
+			return occupantBoxes(kind, slot);
+		}
+
+		/** Blank shape item this occupant refunds on break. */
+		public net.minecraft.world.item.Item blankItem() {
+			return switch (kind) {
+				case BYTE -> net.createcontour.registry.ContourRegistries
+					.CONTOUR_BYTE_ITEM.get();
+				case PANEL -> net.createcontour.block.PanelSlots
+					.itemForKind(slot / 24);
+				case PANE -> net.createcontour.registry.ContourRegistries
+					.CONTOUR_FLAT_PANE_ITEM.get();
+				case BOARD -> net.createcontour.registry.ContourRegistries
+					.CONTOUR_BOARD_ITEM.get();
+			};
+		}
+	}
+
+	/** Channel kind + slot a held block claims on a merge click. */
+	public record OccupantSpec(OccupantKind kind, int slot) {
+	}
+
+	private final java.util.List<Occupant> occupants =
+		new java.util.ArrayList<>();
+
+	public java.util.List<Occupant> getOccupants() {
+		return java.util.Collections.unmodifiableList(occupants);
+	}
+
+	// --- per-kind compatibility views (issue #4/#12/#24 API surface) ---
 
 	public record ByteOccupant(int octant, BlockState material, int paid) {
 	}
 
-	private final java.util.List<ByteOccupant> byteOccupants =
-		new java.util.ArrayList<>();
-
-	public java.util.List<ByteOccupant> getByteOccupants() {
-		return java.util.Collections.unmodifiableList(byteOccupants);
+	public record PanelOccupant(int slot, int kind, BlockState material,
+		int paid) {
 	}
 
-	public boolean addByteOccupant(int octant, BlockState mat, int paid) {
-		if (frozen || occupiedOctants().contains(octant))
+	public record PaneOccupant(int axis, BlockState material, int paid) {
+	}
+
+	public record BoardOccupant(int face, BlockState material, int paid) {
+	}
+
+	public java.util.List<ByteOccupant> getByteOccupants() {
+		java.util.List<ByteOccupant> out = new java.util.ArrayList<>();
+		for (Occupant o : occupants)
+			if (o.kind() == OccupantKind.BYTE)
+				out.add(new ByteOccupant(o.slot(), o.material(), o.paid()));
+		return java.util.Collections.unmodifiableList(out);
+	}
+
+	public java.util.List<PanelOccupant> getPanelOccupants() {
+		java.util.List<PanelOccupant> out = new java.util.ArrayList<>();
+		for (Occupant o : occupants)
+			if (o.kind() == OccupantKind.PANEL)
+				out.add(new PanelOccupant(
+					net.createcontour.block.PanelSlots
+						.slotFace(o.slot()),
+					net.createcontour.block.PanelSlots
+						.slotKind(o.slot()),
+					o.material(), o.paid()));
+		return java.util.Collections.unmodifiableList(out);
+	}
+
+	public java.util.List<PaneOccupant> getPaneOccupants() {
+		java.util.List<PaneOccupant> out = new java.util.ArrayList<>();
+		for (Occupant o : occupants)
+			if (o.kind() == OccupantKind.PANE)
+				out.add(new PaneOccupant(o.slot(), o.material(), o.paid()));
+		return java.util.Collections.unmodifiableList(out);
+	}
+
+	public java.util.List<BoardOccupant> getBoardOccupants() {
+		java.util.List<BoardOccupant> out = new java.util.ArrayList<>();
+		for (Occupant o : occupants)
+			if (o.kind() == OccupantKind.BOARD)
+				out.add(new BoardOccupant(o.slot(), o.material(),
+					o.paid()));
+		return java.util.Collections.unmodifiableList(out);
+	}
+
+	// --- legality gates ---
+
+	/** This cell's host channel kind, null on non-multipart hosts. */
+	@org.jetbrains.annotations.Nullable
+	public OccupantKind hostKind() {
+		return hostKind(getBlockState());
+	}
+
+	@org.jetbrains.annotations.Nullable
+	public static OccupantKind hostKind(BlockState state) {
+		Block b = state.getBlock();
+		if (b instanceof net.createcontour.block.ContourByteBlock)
+			return OccupantKind.BYTE;
+		if (net.createcontour.block.PanelSlots.isPanelFamily(b))
+			return OccupantKind.PANEL;
+		if (b instanceof net.createcontour.block.ContourFlatPaneBlock)
+			return OccupantKind.PANE;
+		if (b instanceof net.createcontour.block.ContourBoardBlock)
+			return OccupantKind.BOARD;
+		return null;
+	}
+
+	private static boolean slotValid(OccupantKind kind, int slot) {
+		return switch (kind) {
+			case BYTE -> slot >= 0 && slot < 8;
+			case PANEL -> slot >= 0 && slot < 72;
+			case PANE -> slot >= 0 && slot < 3;
+			case BOARD -> slot >= 0 && slot < 6;
+		};
+	}
+
+	/**
+	 * Occupied pixel-space boxes for one channel slot - the same boxes
+	 * the block geometry and the model emit.
+	 */
+	public static java.util.List<float[]> occupantBoxes(OccupantKind kind,
+		int slot) {
+		switch (kind) {
+			case BYTE -> {
+				net.createcontour.block.ContourByteBlock.Octant o =
+					net.createcontour.block.ContourByteBlock.Octant
+						.values()[slot];
+				return java.util.List.of(new float[]{o.x * 8f, o.y * 8f,
+					o.z * 8f, o.x * 8f + 8f, o.y * 8f + 8f, o.z * 8f + 8f});
+			}
+			case PANEL -> {
+				return net.createcontour.block.PanelSlots.occupantBoxes(
+					net.createcontour.block.PanelSlots.slotFace(slot),
+					net.createcontour.block.PanelSlots.slotKind(slot));
+			}
+			case PANE -> {
+				return net.createcontour.block.ContourFlatPaneBlock
+					.boxesForAxis(slot);
+			}
+			default -> {
+				return net.createcontour.block.ContourBoardBlock
+					.boxesForFace(Direction.values()[slot]);
+			}
+		}
+	}
+
+	/**
+	 * The host state's own occupied boxes (occupant #0). Diagonal
+	 * panel positions claim their stepped collision slices PLUS the two
+	 * rendered corner columns - both are real geometry a merge must
+	 * avoid.
+	 */
+	public static java.util.List<float[]> hostFootprint(BlockState state) {
+		Block b = state.getBlock();
+		if (b instanceof net.createcontour.block.ContourByteBlock) {
+			net.createcontour.block.ContourByteBlock.Octant o =
+				state.getValue(
+					net.createcontour.block.ContourByteBlock.OCTANT);
+			return java.util.List.of(new float[]{o.x * 8f, o.y * 8f,
+				o.z * 8f, o.x * 8f + 8f, o.y * 8f + 8f, o.z * 8f + 8f});
+		}
+		if (b instanceof net.createcontour.block.ContourPanelBlock) {
+			net.createcontour.block.ContourPanelBlock.PanelPos p =
+				state.getValue(
+					net.createcontour.block.ContourPanelBlock.POSITION);
+			if (p != null && p.isDiagonal()) {
+				java.util.List<float[]> boxes =
+					new java.util.ArrayList<>(
+						net.createcontour.block.ContourPanelBlock
+							.diagCollisionBoxes(p));
+				boxes.addAll(net.createcontour.block.ContourPanelBlock
+					.boxesFor(p));
+				return boxes;
+			}
+			return net.createcontour.block.PanelSlots.hostBoxes(state);
+		}
+		if (net.createcontour.block.PanelSlots.isPanelFamily(b))
+			return net.createcontour.block.PanelSlots.hostBoxes(state);
+		if (b instanceof net.createcontour.block.ContourFlatPaneBlock)
+			return net.createcontour.block.ContourFlatPaneBlock
+				.boxesForAxis(Direction.Axis.Y.ordinal());
+		if (b instanceof net.createcontour.block.ContourBoardBlock)
+			return net.createcontour.block.ContourBoardBlock
+				.boxesFor(state);
+		return java.util.List.of();
+	}
+
+	private static boolean boxOverlap(float[] a, float[] b) {
+		final float E = 1e-3f;
+		return a[0] < b[3] - E && b[0] < a[3] - E
+			&& a[1] < b[4] - E && b[1] < a[4] - E
+			&& a[2] < b[5] - E && b[2] < a[5] - E;
+	}
+
+	/** Positive-volume AABB intersection (edge/corner touching is free). */
+	public static boolean boxesOverlap(java.util.List<float[]> a,
+		java.util.List<float[]> b) {
+		for (float[] x : a)
+			for (float[] y : b)
+				if (boxOverlap(x, y))
+					return true;
+		return false;
+	}
+
+	/**
+	 * Cross-kind geometric gate: candidate boxes must be disjoint from
+	 * every DIFFERENT-kind occupant's footprint and from a
+	 * different-kind host's own footprint. Same-kind legality is the
+	 * channel's lattice rule, checked separately.
+	 */
+	public boolean crossKindClear(OccupantKind kind,
+		java.util.List<float[]> cand) {
+		for (Occupant o : occupants)
+			if (o.kind() != kind && boxesOverlap(cand, o.footprint()))
+				return false;
+		OccupantKind hk = hostKind();
+		return hk == kind || hk == null
+			|| !boxesOverlap(cand, hostFootprint(getBlockState()));
+	}
+
+	/** Intra-kind claim legality shared by merge and insert paths. */
+	private boolean channelClaimFree(OccupantKind kind, int slot) {
+		return switch (kind) {
+			case BYTE -> !occupiedOctants().contains(slot);
+			case PANEL -> panelSlotsFree(
+				net.createcontour.block.PanelSlots.slots(
+					net.createcontour.block.PanelSlots.slotFace(slot),
+					net.createcontour.block.PanelSlots.slotKind(slot)));
+			case PANE -> !occupiedPaneAxes().contains(slot);
+			case BOARD -> boardOccupantIndex(slot) < 0;
+		};
+	}
+
+	/**
+	 * Placement legality for the item/canBeReplaced route: intra-kind
+	 * claim free AND cross-kind geometric disjoint. BOARD candidates on
+	 * a board host additionally need the face flag FREE (the flag is
+	 * the host's face claim and gets set by the merge itself).
+	 */
+	public boolean canMergeOccupant(OccupantKind kind, int slot) {
+		if (frozen || kind == null || hostKind() == null
+			|| !slotValid(kind, slot) || !channelClaimFree(kind, slot))
 			return false;
-		byteOccupants.add(new ByteOccupant(octant,
+		if (kind == OccupantKind.BOARD
+			&& getBlockState().getBlock()
+				instanceof net.createcontour.block.ContourBoardBlock
+			&& net.createcontour.block.ContourBoardBlock.facePresent(
+				getBlockState(), Direction.values()[slot]))
+			return false;
+		return crossKindClear(kind, occupantBoxes(kind, slot));
+	}
+
+	/**
+	 * Insertion legality: same as merge EXCEPT a BOARD record on a
+	 * board host requires its face flag PRESENT (the record is the
+	 * ledger of an existing sheet - set by the merge before insert, or
+	 * healed on first paint). NBT load runs this gate so malformed or
+	 * overlapping records drop rather than being trusted.
+	 */
+	private boolean canAddOccupant(OccupantKind kind, int slot) {
+		if (frozen || kind == null || hostKind() == null
+			|| !slotValid(kind, slot) || !channelClaimFree(kind, slot))
+			return false;
+		if (kind == OccupantKind.BOARD
+			&& getBlockState().getBlock()
+				instanceof net.createcontour.block.ContourBoardBlock
+			&& !net.createcontour.block.ContourBoardBlock.facePresent(
+				getBlockState(), Direction.values()[slot]))
+			return false;
+		return crossKindClear(kind, occupantBoxes(kind, slot));
+	}
+
+	/** Gated insert without sync (NBT load adds through this). */
+	private boolean loadOccupant(OccupantKind kind, int slot,
+		BlockState mat, int paid) {
+		if (!canAddOccupant(kind, slot))
+			return false;
+		occupants.add(new Occupant(kind, slot,
+			MaterialSafety.sanitize(mat), Math.max(0, paid)));
+		return true;
+	}
+
+	/** Add an extra occupant; the gate is canAddOccupant. */
+	public boolean addOccupant(OccupantKind kind, int slot, BlockState mat,
+		int paid) {
+		if (!canAddOccupant(kind, slot))
+			return false;
+		occupants.add(new Occupant(kind, slot,
 			MaterialSafety.sanitize(mat), Math.max(0, paid)));
 		notifyUpdate();
 		if (level != null)
@@ -170,24 +480,87 @@ public class ContourBlockEntity extends CopycatBlockEntity
 		return true;
 	}
 
-	public int byteOccupantIndex(int octant) {
-		for (int i = 0; i < byteOccupants.size(); i++)
-			if (byteOccupants.get(i).octant() == octant)
+	/** Unified occupant paint (unified-list index). */
+	public boolean paintOccupant(int idx, BlockState mat, int paid) {
+		if (frozen || idx < 0 || idx >= occupants.size())
+			return false;
+		Occupant old = occupants.get(idx);
+		occupants.set(idx, new Occupant(old.kind(), old.slot(),
+			MaterialSafety.sanitize(mat), Math.max(0, paid)));
+		notifyUpdate();
+		if (level != null)
+			refreshMaterialAppearance();
+		return true;
+	}
+
+	/** Unified-list index of the filteredIdx-th occupant of `kind`. */
+	private int unifiedIndex(OccupantKind kind, int filteredIdx) {
+		if (filteredIdx < 0)
+			return -1;
+		int seen = 0;
+		for (int i = 0; i < occupants.size(); i++)
+			if (occupants.get(i).kind() == kind && seen++ == filteredIdx)
 				return i;
 		return -1;
 	}
 
-	public boolean paintByteOccupant(int idx, BlockState mat, int paid) {
-		if (frozen || idx < 0 || idx >= byteOccupants.size())
-			return false;
-		ByteOccupant old = byteOccupants.get(idx);
-		byteOccupants.set(idx, new ByteOccupant(old.octant(),
-			MaterialSafety.sanitize(mat), Math.max(0, paid)));
-		notifyUpdate();
-		if (level != null)
-			refreshMaterialAppearance();
-		return true;
+	// --- merge resolution (item + canBeReplaced paths) ---
+
+	/**
+	 * The occupant claim a held Contour item makes on the hit cell:
+	 * byte -> octant under the hit, panel family -> face slot per
+	 * sub-kind, flat pane -> clicked face's axis, board -> clicked
+	 * face. Non-occupant Contour items (slabs, stairs...) return null.
+	 */
+	@org.jetbrains.annotations.Nullable
+	public static OccupantSpec specFor(Block heldBlock, Direction face,
+		Vec3 hit, BlockPos cell) {
+		if (heldBlock instanceof net.createcontour.block.ContourByteBlock)
+			return new OccupantSpec(OccupantKind.BYTE,
+				net.createcontour.block.ContourByteBlock.octantAt(hit,
+					cell));
+		int pk = net.createcontour.block.PanelSlots.kindOf(heldBlock);
+		if (pk >= 0) {
+			int s = net.createcontour.block.PanelSlots.incomingSlot(
+				heldBlock, face, hit, cell);
+			return s >= 0
+				? new OccupantSpec(OccupantKind.PANEL,
+					net.createcontour.block.PanelSlots.encodeSlot(s, pk))
+				: null;
+		}
+		if (heldBlock instanceof net.createcontour.block.ContourFlatPaneBlock)
+			return new OccupantSpec(OccupantKind.PANE,
+				face.getAxis().ordinal());
+		if (heldBlock instanceof net.createcontour.block.ContourBoardBlock)
+			return new OccupantSpec(OccupantKind.BOARD, face.ordinal());
+		return null;
 	}
+
+	/**
+	 * Shared canBeReplaced gate for every multipart host block: the
+	 * held item must map to an occupant spec whose claim is legal on
+	 * the reconstructed clicked cell. getClickedPos() is unreliable
+	 * inside canBeReplaced, so the hit point is nudged opposite the
+	 * clicked face to land inside the hit cell.
+	 */
+	public static boolean canMergeInto(BlockPlaceContext ctx) {
+		if (!(ctx.getItemInHand().getItem()
+			instanceof net.createcontour.item.ContourBlockItem cbi))
+			return false;
+		Vec3 click = ctx.getClickLocation();
+		BlockPos clicked = BlockPos.containing(click.subtract(
+			Vec3.atLowerCornerOf(ctx.getClickedFace().getNormal())
+				.scale(1.0E-4)));
+		if (!(ctx.getLevel().getBlockEntity(clicked)
+			instanceof ContourBlockEntity be))
+			return false;
+		OccupantSpec spec = specFor(cbi.getBlock(), ctx.getClickedFace(),
+			click, clicked);
+		return spec != null
+			&& be.canMergeOccupant(spec.kind(), spec.slot());
+	}
+
+	// --- intra-kind claim sets (host + same-kind extras) ---
 
 	public java.util.Set<Integer> occupiedOctants() {
 		java.util.Set<Integer> s = new java.util.HashSet<>();
@@ -197,97 +570,26 @@ public class ContourBlockEntity extends CopycatBlockEntity
 					net.createcontour.block.ContourByteBlock.OCTANT)
 						.ordinal()
 				: -1);
-		for (ByteOccupant o : byteOccupants)
-			s.add(o.octant());
+		for (Occupant o : occupants)
+			if (o.kind() == OccupantKind.BYTE)
+				s.add(o.slot());
 		return s;
-	}
-
-	// --- issue #12: panel face-quadrant channel (occupant #0 stays in
-	// the host blockstate; extras carry a slot anchor + kind) ---
-
-	/**
-	 * Extra panel-family occupant: slot = face*4 + kind-specific sub
-	 * (byte-panel quadrant / half-id / 0 for full-face); kind is one of
-	 * PanelSlots.KIND_*. The slot footprint expands per kind.
-	 */
-	public record PanelOccupant(int slot, int kind, BlockState material,
-		int paid) {
-	}
-
-	private final java.util.List<PanelOccupant> panelOccupants =
-		new java.util.ArrayList<>();
-
-	public java.util.List<PanelOccupant> getPanelOccupants() {
-		return java.util.Collections.unmodifiableList(panelOccupants);
 	}
 
 	/** Union of every claimed face-quadrant slot (host + extras). */
 	public java.util.Set<Integer> occupiedPanelSlots() {
 		java.util.Set<Integer> s =
 			net.createcontour.block.PanelSlots.stateSlots(getBlockState());
-		for (PanelOccupant o : panelOccupants)
-			s.addAll(net.createcontour.block.PanelSlots.slots(o.slot(),
-				o.kind()));
+		for (Occupant o : occupants)
+			if (o.kind() == OccupantKind.PANEL)
+				s.addAll(net.createcontour.block.PanelSlots.slots(
+					net.createcontour.block.PanelSlots.slotFace(o.slot()),
+					net.createcontour.block.PanelSlots.slotKind(o.slot())));
 		return s;
 	}
 
 	public boolean panelSlotsFree(java.util.Set<Integer> claim) {
 		return java.util.Collections.disjoint(occupiedPanelSlots(), claim);
-	}
-
-	public boolean addPanelOccupant(int slot, int kind, BlockState mat,
-		int paid) {
-		if (frozen || kind < 0 || slot < 0 || slot >= 24)
-			return false;
-		if (!panelSlotsFree(
-			net.createcontour.block.PanelSlots.slots(slot, kind)))
-			return false;
-		panelOccupants.add(new PanelOccupant(slot, kind,
-			MaterialSafety.sanitize(mat), Math.max(0, paid)));
-		notifyUpdate();
-		if (level != null)
-			refreshMaterialAppearance();
-		return true;
-	}
-
-	/** Extra-occupant index whose footprint contains faceSlot, or -1. */
-	public int panelOccupantIndex(int faceSlot) {
-		for (int i = 0; i < panelOccupants.size(); i++) {
-			PanelOccupant o = panelOccupants.get(i);
-			if (net.createcontour.block.PanelSlots
-				.slots(o.slot(), o.kind()).contains(faceSlot))
-				return i;
-		}
-		return -1;
-	}
-
-	public boolean paintPanelOccupant(int idx, BlockState mat, int paid) {
-		if (frozen || idx < 0 || idx >= panelOccupants.size())
-			return false;
-		PanelOccupant old = panelOccupants.get(idx);
-		panelOccupants.set(idx, new PanelOccupant(old.slot(), old.kind(),
-			MaterialSafety.sanitize(mat), Math.max(0, paid)));
-		notifyUpdate();
-		if (level != null)
-			refreshMaterialAppearance();
-		return true;
-	}
-
-	// --- issue #12: interior flat-pane channel (axis mid-planes) ---
-
-	/**
-	 * Extra flat-pane occupant: axis 0/1/2 = X/Y/Z mid-plane sheet.
-	 * Occupant #0 is always the blockstate Y sheet; same-axis is
-	 * exclusive (coincident planes), different axes cross freely.
-	 */
-	public record PaneOccupant(int axis, BlockState material, int paid) {
-	}
-
-	private final java.util.List<PaneOccupant> paneOccupants =
-		new java.util.ArrayList<>();
-
-	public java.util.List<PaneOccupant> getPaneOccupants() {
-		return java.util.Collections.unmodifiableList(paneOccupants);
 	}
 
 	/** Occupied interior-plane axes (host blockstate + extras). */
@@ -296,104 +598,137 @@ public class ContourBlockEntity extends CopycatBlockEntity
 		if (getBlockState().getBlock()
 			instanceof net.createcontour.block.ContourFlatPaneBlock)
 			s.add(Direction.Axis.Y.ordinal());
-		for (PaneOccupant o : paneOccupants)
-			s.add(o.axis());
+		for (Occupant o : occupants)
+			if (o.kind() == OccupantKind.PANE)
+				s.add(o.slot());
 		return s;
 	}
 
+	/** Flattened pixel-space boxes of every extra (shape unions). */
+	public java.util.List<float[]> extraFootprintBoxes() {
+		java.util.List<float[]> out = new java.util.ArrayList<>();
+		for (Occupant o : occupants)
+			out.addAll(o.footprint());
+		return out;
+	}
+
+	// --- per-kind wrappers over the unified list ---
+
+	public boolean addByteOccupant(int octant, BlockState mat, int paid) {
+		return addOccupant(OccupantKind.BYTE, octant, mat, paid);
+	}
+
+	public boolean addPanelOccupant(int slot, int kind, BlockState mat,
+		int paid) {
+		if (kind < 0 || kind > 2 || slot < 0 || slot >= 24)
+			return false;
+		return addOccupant(OccupantKind.PANEL,
+			net.createcontour.block.PanelSlots.encodeSlot(slot, kind),
+			mat, paid);
+	}
+
 	public boolean addPaneOccupant(int axis, BlockState mat, int paid) {
-		if (frozen || axis < 0 || axis > 2
-			|| occupiedPaneAxes().contains(axis))
-			return false;
-		paneOccupants.add(new PaneOccupant(axis,
-			MaterialSafety.sanitize(mat), Math.max(0, paid)));
-		notifyUpdate();
-		if (level != null)
-			refreshMaterialAppearance();
-		return true;
-	}
-
-	public int paneOccupantIndex(int axis) {
-		for (int i = 0; i < paneOccupants.size(); i++)
-			if (paneOccupants.get(i).axis() == axis)
-				return i;
-		return -1;
-	}
-
-	public boolean paintPaneOccupant(int idx, BlockState mat, int paid) {
-		if (frozen || idx < 0 || idx >= paneOccupants.size())
-			return false;
-		PaneOccupant old = paneOccupants.get(idx);
-		paneOccupants.set(idx, new PaneOccupant(old.axis(),
-			MaterialSafety.sanitize(mat), Math.max(0, paid)));
-		notifyUpdate();
-		if (level != null)
-			refreshMaterialAppearance();
-		return true;
-	}
-
-	// --- issue #24: board face-shell channel - one occupant record per
-	// PRESENT face of a ContourBoardBlock (face presence itself lives in
-	// blockstate, so records carry material + paid only; they add no
-	// host units of their own) ---
-
-	public record BoardOccupant(int face, BlockState material, int paid) {
-	}
-
-	private final java.util.List<BoardOccupant> boardOccupants =
-		new java.util.ArrayList<>();
-
-	public java.util.List<BoardOccupant> getBoardOccupants() {
-		return java.util.Collections.unmodifiableList(boardOccupants);
-	}
-
-	public int boardOccupantIndex(int face) {
-		for (int i = 0; i < boardOccupants.size(); i++)
-			if (boardOccupants.get(i).face() == face)
-				return i;
-		return -1;
+		return addOccupant(OccupantKind.PANE, axis, mat, paid);
 	}
 
 	/**
-	 * Registers the material/paid record for one face. Presence is the
-	 * caller's contract (the face flag must be set in blockstate); this
-	 * only guards against duplicates, because read-time validation can
-	 * drop records whose flag vanished.
+	 * Registers the material/paid record for one face. On a board host
+	 * the face flag must be set in blockstate (presence is the caller's
+	 * contract); on a non-board host the record itself is the presence.
 	 */
 	public boolean addBoardOccupant(int face, BlockState mat, int paid) {
-		if (frozen || face < 0 || face > 5
-			|| boardOccupantIndex(face) >= 0)
-			return false;
-		boardOccupants.add(new BoardOccupant(face,
-			MaterialSafety.sanitize(mat), Math.max(0, paid)));
-		notifyUpdate();
-		if (level != null)
-			refreshMaterialAppearance();
-		return true;
+		return addOccupant(OccupantKind.BOARD, face, mat, paid);
+	}
+
+	public int byteOccupantIndex(int octant) {
+		int vi = 0;
+		for (Occupant o : occupants) {
+			if (o.kind() != OccupantKind.BYTE)
+				continue;
+			if (o.slot() == octant)
+				return vi;
+			vi++;
+		}
+		return -1;
+	}
+
+	/** Panel-filtered index whose slot claim contains faceSlot, or -1. */
+	public int panelOccupantIndex(int faceSlot) {
+		int vi = 0;
+		for (Occupant o : occupants) {
+			if (o.kind() != OccupantKind.PANEL)
+				continue;
+			if (net.createcontour.block.PanelSlots.slots(
+				net.createcontour.block.PanelSlots.slotFace(o.slot()),
+				net.createcontour.block.PanelSlots.slotKind(o.slot()))
+				.contains(faceSlot))
+				return vi;
+			vi++;
+		}
+		return -1;
+	}
+
+	public int paneOccupantIndex(int axis) {
+		int vi = 0;
+		for (Occupant o : occupants) {
+			if (o.kind() != OccupantKind.PANE)
+				continue;
+			if (o.slot() == axis)
+				return vi;
+			vi++;
+		}
+		return -1;
+	}
+
+	public int boardOccupantIndex(int face) {
+		int vi = 0;
+		for (Occupant o : occupants) {
+			if (o.kind() != OccupantKind.BOARD)
+				continue;
+			if (o.slot() == face)
+				return vi;
+			vi++;
+		}
+		return -1;
+	}
+
+	public boolean paintByteOccupant(int idx, BlockState mat, int paid) {
+		return paintOccupant(unifiedIndex(OccupantKind.BYTE, idx), mat,
+			paid);
+	}
+
+	public boolean paintPanelOccupant(int idx, BlockState mat, int paid) {
+		return paintOccupant(unifiedIndex(OccupantKind.PANEL, idx), mat,
+			paid);
+	}
+
+	public boolean paintPaneOccupant(int idx, BlockState mat, int paid) {
+		return paintOccupant(unifiedIndex(OccupantKind.PANE, idx), mat,
+			paid);
 	}
 
 	public boolean paintBoardOccupant(int idx, BlockState mat, int paid) {
-		if (frozen || idx < 0 || idx >= boardOccupants.size())
-			return false;
-		BoardOccupant old = boardOccupants.get(idx);
-		boardOccupants.set(idx, new BoardOccupant(old.face(),
-			MaterialSafety.sanitize(mat), Math.max(0, paid)));
-		notifyUpdate();
-		if (level != null)
-			refreshMaterialAppearance();
-		return true;
+		return paintOccupant(unifiedIndex(OccupantKind.BOARD, idx), mat,
+			paid);
 	}
 
 	@org.jetbrains.annotations.Nullable
 	public BoardOccupant removeBoardOccupant(int face) {
-		int idx = boardOccupantIndex(face);
+		int idx = -1;
+		for (int i = 0; i < occupants.size(); i++) {
+			Occupant o = occupants.get(i);
+			if (o.kind() == OccupantKind.BOARD && o.slot() == face) {
+				idx = i;
+				break;
+			}
+		}
 		if (frozen || idx < 0)
 			return null;
-		BoardOccupant o = boardOccupants.remove(idx);
+		Occupant o = occupants.remove(idx);
 		notifyUpdate();
 		if (level != null)
 			refreshMaterialAppearance();
-		return o;
+		return new BoardOccupant(face, o.material(), o.paid());
 	}
 
 	/**
@@ -413,12 +748,12 @@ public class ContourBlockEntity extends CopycatBlockEntity
 				? clickedFace : clickedFace.getOpposite();
 		int idx = boardOccupantIndex(f.ordinal());
 		if (idx >= 0) {
-			BlockState m = boardOccupants.get(idx).material();
+			BlockState m = getBoardOccupants().get(idx).material();
 			if (m != null && !MaterialSafety.isNeutral(m))
 				return m;
 		}
-		for (BoardOccupant o : boardOccupants)
-			if (o.material() != null
+		for (Occupant o : occupants)
+			if (o.kind() == OccupantKind.BOARD && o.material() != null
 				&& !MaterialSafety.isNeutral(o.material()))
 				return o.material();
 		return null;
@@ -500,22 +835,7 @@ public class ContourBlockEntity extends CopycatBlockEntity
 			stacks.add(new ItemStack(material.getBlock().asItem(), blockUnits));
 		}
 		if (ContourConfig.consumeMaterial()) {
-			for (ByteOccupant o : byteOccupants)
-				if (o.material() != null && !MaterialSafety.isNeutral(o.material())
-					&& !o.material().getBlock().asItem().getDefaultInstance()
-						.isEmpty())
-					stacks.add(new ItemStack(o.material().getBlock().asItem(), 1));
-			for (PanelOccupant o : panelOccupants)
-				if (o.material() != null && !MaterialSafety.isNeutral(o.material())
-					&& !o.material().getBlock().asItem().getDefaultInstance()
-						.isEmpty())
-					stacks.add(new ItemStack(o.material().getBlock().asItem(), 1));
-			for (PaneOccupant o : paneOccupants)
-				if (o.material() != null && !MaterialSafety.isNeutral(o.material())
-					&& !o.material().getBlock().asItem().getDefaultInstance()
-						.isEmpty())
-					stacks.add(new ItemStack(o.material().getBlock().asItem(), 1));
-			for (BoardOccupant o : boardOccupants)
+			for (Occupant o : occupants)
 				if (o.material() != null && !MaterialSafety.isNeutral(o.material())
 					&& !o.material().getBlock().asItem().getDefaultInstance()
 						.isEmpty())
@@ -525,20 +845,31 @@ public class ContourBlockEntity extends CopycatBlockEntity
 			state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.SLAB_TYPE)
 				&& state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.SLAB_TYPE)
 					== net.minecraft.world.level.block.state.properties.SlabType.DOUBLE ? 2 : 1;
-		// Host-item extras cover own-kind occupants only (bytes); panel
-		// and pane occupants each require their own kind's blank item.
-		int extraUnits = hostUnits() - panelOccupants.size()
-			- paneOccupants.size() - defaultUnits;
-		if (extraUnits > 0
-			&& !state.getBlock().asItem().getDefaultInstance().isEmpty()) {
-			stacks.add(new ItemStack(state.getBlock().asItem(), extraUnits));
+		// Host-item extras cover occupants whose blank item IS the host
+		// item (byte on byte host, board face on board host, full panel
+		// on panel host...); every other occupant needs its own kind's
+		// blank item (a full panel on a byte-panel host costs a
+		// contour_panel, not a contour_byte_panel).
+		net.minecraft.world.item.Item hostItem = state.getBlock().asItem();
+		int baseUnits = state.getBlock()
+			instanceof net.createcontour.block.ContourBlock cb3
+				? cb3.hostUnits(state) : 1;
+		boolean boardHost = state.getBlock()
+			instanceof net.createcontour.block.ContourBoardBlock;
+		int extraUnits = baseUnits - defaultUnits;
+		for (Occupant o : occupants) {
+			// A BOARD record on a board host is the ledger of an
+			// existing face - the face itself is already billed inside
+			// baseUnits, so it adds no blank of its own.
+			if (boardHost && o.kind() == OccupantKind.BOARD)
+				continue;
+			if (o.blankItem() == hostItem)
+				extraUnits++;
+			else
+				stacks.add(new ItemStack(o.blankItem()));
 		}
-		for (PanelOccupant o : panelOccupants)
-			stacks.add(new ItemStack(
-				net.createcontour.block.PanelSlots.itemForKind(o.kind())));
-		for (PaneOccupant o : paneOccupants)
-			stacks.add(new ItemStack(net.createcontour.registry
-				.ContourRegistries.CONTOUR_FLAT_PANE_ITEM.get()));
+		if (extraUnits > 0 && !hostItem.getDefaultInstance().isEmpty())
+			stacks.add(new ItemStack(hostItem, extraUnits));
 		if (stacks.isEmpty())
 			return ItemRequirement.NONE;
 		return new ItemRequirement(ItemRequirement.ItemUseType.CONSUME, stacks);
@@ -553,20 +884,22 @@ public class ContourBlockEntity extends CopycatBlockEntity
 		// Board face anchors are directions: they must track the
 		// structure rotation/mirror alongside the blockstate face flags
 		// (rotate()/mirror() on the block remap the flags themselves).
-		if (!boardOccupants.isEmpty()) {
-			java.util.List<BoardOccupant> remapped =
-				new java.util.ArrayList<>();
-			for (BoardOccupant o : boardOccupants) {
-				Direction f = transform.mirrorFacing(transform.rotation
-					.rotate(Direction.values()[o.face()]));
-				BlockState m = o.material() != null
-					&& !MaterialSafety.isNeutral(o.material())
-					&& ContourConfig.rotateTextures()
-						? transform.apply(o.material()) : o.material();
-				remapped.add(new BoardOccupant(f.ordinal(), m, o.paid()));
-			}
-			boardOccupants.clear();
-			boardOccupants.addAll(remapped);
+		// Other occupant slots (octants, face-quadrant sub-slots, axes)
+		// historically do NOT remap and their materials do NOT rotate -
+		// preserved semantics, documented as a limitation in
+		// docs/Continuation.md.
+		for (int i = 0; i < occupants.size(); i++) {
+			Occupant o = occupants.get(i);
+			if (o.kind() != OccupantKind.BOARD)
+				continue;
+			Direction f = transform.mirrorFacing(transform.rotation
+				.rotate(Direction.values()[o.slot()]));
+			BlockState m = o.material() != null
+				&& !MaterialSafety.isNeutral(o.material())
+				&& ContourConfig.rotateTextures()
+					? transform.apply(o.material()) : o.material();
+			occupants.set(i, new Occupant(o.kind(), f.ordinal(), m,
+				o.paid()));
 		}
 		facing = transform.mirrorFacing(transform.rotation.rotate(facing));
 		notifyUpdate();
@@ -614,101 +947,113 @@ public class ContourBlockEntity extends CopycatBlockEntity
 		paidUnits = Math.min(parsedPaid, hostUnits());
 		if (MaterialSafety.isNeutral(material))
 			paidUnits = 0;
-		byteOccupants.clear();
-		if (tag.contains("ByteExtras")) {
-			for (net.minecraft.nbt.Tag t : tag.getList("ByteExtras",
+		occupants.clear();
+		// issue #22 unified format (forward-only): a single "Occupants"
+		// list of {Kind, Slot, Material, Paid}. Every record passes the
+		// same insertion gate as runtime adds, so malformed, overlapping
+		// or unsupported entries drop rather than being trusted.
+		if (tag.contains("Occupants")) {
+			for (net.minecraft.nbt.Tag t : tag.getList("Occupants",
 				net.minecraft.nbt.Tag.TAG_COMPOUND)) {
 				CompoundTag e = (CompoundTag) t;
-				int o = e.getInt("Octant");
-				if (o >= 0 && o < 8) {
-					try {
-						byteOccupants.add(new ByteOccupant(o,
-							MaterialSafety.sanitize(NbtUtils.readBlockState(
-								provider.lookupOrThrow(Registries.BLOCK),
-								e.getCompound("Material"))),
-							Math.max(0, e.getInt("Paid"))));
-					} catch (RuntimeException ignored) {
-					}
-				}
-			}
-		}
-		panelOccupants.clear();
-		if (tag.contains("PanelExtras")) {
-			java.util.Set<Integer> claimed =
-				new java.util.HashSet<>(occupiedPanelSlots());
-			for (net.minecraft.nbt.Tag t : tag.getList("PanelExtras",
-				net.minecraft.nbt.Tag.TAG_COMPOUND)) {
-				CompoundTag e = (CompoundTag) t;
-				int slot = e.getInt("Slot"), kind = e.getInt("Kind");
-				java.util.Set<Integer> fp = e.contains("Slot")
-					&& e.contains("Kind") && kind >= 0 && kind <= 2
-					&& slot >= 0 && slot < 24
-						? net.createcontour.block.PanelSlots.slots(slot, kind)
-						: java.util.Set.of();
-				// malformed or slot-conflicting entries are dropped, not
-				// trusted (footprints are disjointness-checked on load).
-				if (fp.isEmpty() || !java.util.Collections.disjoint(claimed, fp))
+				OccupantKind kind = occupantKindFor(e.getString("Kind"));
+				if (kind == null || !e.contains("Slot"))
 					continue;
 				try {
-					panelOccupants.add(new PanelOccupant(slot, kind,
+					loadOccupant(kind, e.getInt("Slot"),
 						MaterialSafety.sanitize(NbtUtils.readBlockState(
 							provider.lookupOrThrow(Registries.BLOCK),
 							e.getCompound("Material"))),
-						Math.max(0, e.getInt("Paid"))));
-					claimed.addAll(fp);
+						Math.max(0, e.getInt("Paid")));
 				} catch (RuntimeException ignored) {
 				}
 			}
 		}
-		paneOccupants.clear();
-		if (tag.contains("PaneExtras")) {
-			java.util.Set<Integer> claimed =
-				new java.util.HashSet<>(occupiedPaneAxes());
-			for (net.minecraft.nbt.Tag t : tag.getList("PaneExtras",
-				net.minecraft.nbt.Tag.TAG_COMPOUND)) {
-				CompoundTag e = (CompoundTag) t;
-				int axis = e.getInt("Axis");
-				if (axis < 0 || axis > 2 || claimed.contains(axis))
-					continue;
-				try {
-					paneOccupants.add(new PaneOccupant(axis,
-						MaterialSafety.sanitize(NbtUtils.readBlockState(
-							provider.lookupOrThrow(Registries.BLOCK),
-							e.getCompound("Material"))),
-						Math.max(0, e.getInt("Paid"))));
-					claimed.add(axis);
-				} catch (RuntimeException ignored) {
-				}
-			}
-		}
-		boardOccupants.clear();
-		if (tag.contains("BoardExtras")) {
-			java.util.Set<Integer> claimed = new java.util.HashSet<>();
-			for (net.minecraft.nbt.Tag t : tag.getList("BoardExtras",
-				net.minecraft.nbt.Tag.TAG_COMPOUND)) {
-				CompoundTag e = (CompoundTag) t;
-				int f = e.getInt("Face");
-				// A record whose face flag is not set in the blockstate,
-				// or a duplicate face, is dropped rather than trusted.
-				if (f < 0 || f > 5 || claimed.contains(f)
-					|| !(getBlockState().getBlock()
-						instanceof net.createcontour.block.ContourBoardBlock)
-					|| !net.createcontour.block.ContourBoardBlock
-						.facePresent(getBlockState(), Direction.values()[f]))
-					continue;
-				try {
-					boardOccupants.add(new BoardOccupant(f,
-						MaterialSafety.sanitize(NbtUtils.readBlockState(
-							provider.lookupOrThrow(Registries.BLOCK),
-							e.getCompound("Material"))),
-						Math.max(0, e.getInt("Paid"))));
-					claimed.add(f);
-				} catch (RuntimeException ignored) {
-				}
-			}
-		}
+		// Legacy per-channel keys (pre-issue-#22 saves): read once,
+		// migrated into the unified list, never written again.
+		loadLegacyExtras(tag, provider);
 		if (level != null)
 			refreshMaterialAppearance();
+	}
+
+	@org.jetbrains.annotations.Nullable
+	private static OccupantKind occupantKindFor(String name) {
+		return switch (name) {
+			case "byte" -> OccupantKind.BYTE;
+			case "panel" -> OccupantKind.PANEL;
+			case "pane" -> OccupantKind.PANE;
+			case "board" -> OccupantKind.BOARD;
+			default -> null;
+		};
+	}
+
+	@org.jetbrains.annotations.Nullable
+	private static BlockState readMaterial(CompoundTag e,
+		HolderLookup.Provider provider) {
+		try {
+			return MaterialSafety.sanitize(NbtUtils.readBlockState(
+				provider.lookupOrThrow(Registries.BLOCK),
+				e.getCompound("Material")));
+		} catch (RuntimeException ignored) {
+			return null;
+		}
+	}
+
+	/**
+	 * Legacy per-channel extras keys, migrated once into `occupants`
+	 * and never re-emitted: ByteExtras {Octant}, PanelExtras
+	 * {Slot, Kind}, PaneExtras {Axis}, BoardExtras {Face}. Each entry
+	 * goes through the normal insertion gate, so the same malformed /
+	 * conflicting / drifted-record drops the old per-channel loaders
+	 * enforced still apply (plus the new cross-kind geometry gate).
+	 */
+	private void loadLegacyExtras(CompoundTag tag,
+		HolderLookup.Provider provider) {
+		for (net.minecraft.nbt.Tag t : tag.getList("ByteExtras",
+			net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+			CompoundTag e = (CompoundTag) t;
+			if (!e.contains("Octant"))
+				continue;
+			BlockState m = readMaterial(e, provider);
+			if (m != null)
+				loadOccupant(OccupantKind.BYTE, e.getInt("Octant"), m,
+					Math.max(0, e.getInt("Paid")));
+		}
+		for (net.minecraft.nbt.Tag t : tag.getList("PanelExtras",
+			net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+			CompoundTag e = (CompoundTag) t;
+			if (!e.contains("Slot") || !e.contains("Kind"))
+				continue;
+			int slot = e.getInt("Slot"), kind = e.getInt("Kind");
+			if (kind < 0 || kind > 2)
+				continue;
+			BlockState m = readMaterial(e, provider);
+			if (m != null)
+				loadOccupant(OccupantKind.PANEL,
+					net.createcontour.block.PanelSlots.encodeSlot(slot,
+						kind),
+					m, Math.max(0, e.getInt("Paid")));
+		}
+		for (net.minecraft.nbt.Tag t : tag.getList("PaneExtras",
+			net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+			CompoundTag e = (CompoundTag) t;
+			if (!e.contains("Axis"))
+				continue;
+			BlockState m = readMaterial(e, provider);
+			if (m != null)
+				loadOccupant(OccupantKind.PANE, e.getInt("Axis"), m,
+					Math.max(0, e.getInt("Paid")));
+		}
+		for (net.minecraft.nbt.Tag t : tag.getList("BoardExtras",
+			net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+			CompoundTag e = (CompoundTag) t;
+			if (!e.contains("Face"))
+				continue;
+			BlockState m = readMaterial(e, provider);
+			if (m != null)
+				loadOccupant(OccupantKind.BOARD, e.getInt("Face"), m,
+					Math.max(0, e.getInt("Paid")));
+		}
 	}
 
 	/**
@@ -752,51 +1097,37 @@ public class ContourBlockEntity extends CopycatBlockEntity
 		tag.putInt("PaidUnits", paidUnits);
 		tag.putString("Facing", facing.name());
 		tag.putBoolean("Top", top);
-		if (!byteOccupants.isEmpty()) {
-			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
-			for (ByteOccupant o : byteOccupants) {
-				CompoundTag e = new CompoundTag();
-				e.putInt("Octant", o.octant());
-				e.put("Material", NbtUtils.writeBlockState(o.material()));
-				e.putInt("Paid", o.paid());
-				list.add(e);
-			}
-			tag.put("ByteExtras", list);
+		writeOccupants(tag, false);
+	}
+
+	/**
+	 * Unified occupant serialization (issue #22): one "Occupants" list
+	 * of {Kind, Slot, Material, Paid} compounds. safePaid projects the
+	 * ledger for schematic export (see writeSafe); legacy per-channel
+	 * keys are never emitted again.
+	 */
+	private void writeOccupants(CompoundTag tag, boolean safePaid) {
+		if (occupants.isEmpty())
+			return;
+		net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+		for (Occupant o : occupants) {
+			CompoundTag e = new CompoundTag();
+			e.putString("Kind", switch (o.kind()) {
+				case BYTE -> "byte";
+				case PANEL -> "panel";
+				case PANE -> "pane";
+				case BOARD -> "board";
+			});
+			e.putInt("Slot", o.slot());
+			e.put("Material", NbtUtils.writeBlockState(o.material()));
+			boolean custom = o.material() != null
+				&& !MaterialSafety.isNeutral(o.material());
+			e.putInt("Paid", safePaid
+				? (custom && ContourConfig.consumeMaterial() ? 1 : 0)
+				: o.paid());
+			list.add(e);
 		}
-		if (!panelOccupants.isEmpty()) {
-			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
-			for (PanelOccupant o : panelOccupants) {
-				CompoundTag e = new CompoundTag();
-				e.putInt("Slot", o.slot());
-				e.putInt("Kind", o.kind());
-				e.put("Material", NbtUtils.writeBlockState(o.material()));
-				e.putInt("Paid", o.paid());
-				list.add(e);
-			}
-			tag.put("PanelExtras", list);
-		}
-		if (!paneOccupants.isEmpty()) {
-			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
-			for (PaneOccupant o : paneOccupants) {
-				CompoundTag e = new CompoundTag();
-				e.putInt("Axis", o.axis());
-				e.put("Material", NbtUtils.writeBlockState(o.material()));
-				e.putInt("Paid", o.paid());
-				list.add(e);
-			}
-			tag.put("PaneExtras", list);
-		}
-		if (!boardOccupants.isEmpty()) {
-			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
-			for (BoardOccupant o : boardOccupants) {
-				CompoundTag e = new CompoundTag();
-				e.putInt("Face", o.face());
-				e.put("Material", NbtUtils.writeBlockState(o.material()));
-				e.putInt("Paid", o.paid());
-				list.add(e);
-			}
-			tag.put("BoardExtras", list);
-		}
+		tag.put("Occupants", list);
 	}
 
 	@Override
@@ -829,59 +1160,7 @@ public class ContourBlockEntity extends CopycatBlockEntity
 		// Extra occupants export with paid only where the requirement
 		// above will charge one material unit at print; consume-off
 		// exports none so free paint can never become a refund source.
-		if (!byteOccupants.isEmpty()) {
-			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
-			for (ByteOccupant o : byteOccupants) {
-				CompoundTag e = new CompoundTag();
-				e.putInt("Octant", o.octant());
-				e.put("Material", NbtUtils.writeBlockState(o.material()));
-				boolean custom = o.material() != null
-					&& !MaterialSafety.isNeutral(o.material());
-				e.putInt("Paid", custom && ContourConfig.consumeMaterial() ? 1 : 0);
-				list.add(e);
-			}
-			tag.put("ByteExtras", list);
-		}
-		if (!panelOccupants.isEmpty()) {
-			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
-			for (PanelOccupant o : panelOccupants) {
-				CompoundTag e = new CompoundTag();
-				e.putInt("Slot", o.slot());
-				e.putInt("Kind", o.kind());
-				e.put("Material", NbtUtils.writeBlockState(o.material()));
-				boolean custom = o.material() != null
-					&& !MaterialSafety.isNeutral(o.material());
-				e.putInt("Paid", custom && ContourConfig.consumeMaterial() ? 1 : 0);
-				list.add(e);
-			}
-			tag.put("PanelExtras", list);
-		}
-		if (!paneOccupants.isEmpty()) {
-			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
-			for (PaneOccupant o : paneOccupants) {
-				CompoundTag e = new CompoundTag();
-				e.putInt("Axis", o.axis());
-				e.put("Material", NbtUtils.writeBlockState(o.material()));
-				boolean custom = o.material() != null
-					&& !MaterialSafety.isNeutral(o.material());
-				e.putInt("Paid", custom && ContourConfig.consumeMaterial() ? 1 : 0);
-				list.add(e);
-			}
-			tag.put("PaneExtras", list);
-		}
-		if (!boardOccupants.isEmpty()) {
-			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
-			for (BoardOccupant o : boardOccupants) {
-				CompoundTag e = new CompoundTag();
-				e.putInt("Face", o.face());
-				e.put("Material", NbtUtils.writeBlockState(o.material()));
-				boolean custom = o.material() != null
-					&& !MaterialSafety.isNeutral(o.material());
-				e.putInt("Paid", custom && ContourConfig.consumeMaterial() ? 1 : 0);
-				list.add(e);
-			}
-			tag.put("BoardExtras", list);
-		}
+		writeOccupants(tag, true);
 		tag.remove("Item");
 	}
 
@@ -891,41 +1170,11 @@ public class ContourBlockEntity extends CopycatBlockEntity
 	public ModelData getModelData() {
 		ModelData.Builder b = ModelData.builder()
 			.with(CopycatModel.MATERIAL_PROPERTY, material);
-		if (!byteOccupants.isEmpty()) {
-			java.util.List<net.createcontour.client.ContourByteModel.ByteExtra> ex =
-				new java.util.ArrayList<>();
-			for (ByteOccupant o : byteOccupants)
-				ex.add(new net.createcontour.client.ContourByteModel.ByteExtra(
-					o.octant(), o.material()));
-			b.with(net.createcontour.client.ContourByteModel.BYTE_EXTRAS, ex);
-		}
-		if (!panelOccupants.isEmpty()) {
-			java.util.List<net.createcontour.client.ContourMultipartModel.PanelExtra> ex =
-				new java.util.ArrayList<>();
-			for (PanelOccupant o : panelOccupants)
-				ex.add(new net.createcontour.client.ContourMultipartModel.PanelExtra(
-					o.slot(), o.kind(), o.material()));
-			b.with(net.createcontour.client.ContourMultipartModel.PANEL_EXTRAS,
-				ex);
-		}
-		if (!paneOccupants.isEmpty()) {
-			java.util.List<net.createcontour.client.ContourMultipartModel.PaneExtra> ex =
-				new java.util.ArrayList<>();
-			for (PaneOccupant o : paneOccupants)
-				ex.add(new net.createcontour.client.ContourMultipartModel.PaneExtra(
-					o.axis(), o.material()));
-			b.with(net.createcontour.client.ContourMultipartModel.PANE_EXTRAS,
-				ex);
-		}
-		if (!boardOccupants.isEmpty()) {
-			java.util.List<net.createcontour.client.ContourBoardModel.BoardExtra> ex =
-				new java.util.ArrayList<>();
-			for (BoardOccupant o : boardOccupants)
-				ex.add(new net.createcontour.client.ContourBoardModel.BoardExtra(
-					o.face(), o.material()));
-			b.with(net.createcontour.client.ContourBoardModel.BOARD_EXTRAS,
-				ex);
-		}
+		// issue #22: one unified extras property every host-family model
+		// consumes; per-kind decode lives in the Occupant record itself.
+		if (!occupants.isEmpty())
+			b.with(net.createcontour.client.ContourModel.OCCUPANT_EXTRAS,
+				java.util.List.copyOf(occupants));
 		return b.build();
 	}
 
