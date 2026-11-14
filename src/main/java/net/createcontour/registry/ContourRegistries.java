@@ -875,8 +875,7 @@ public final class ContourRegistries {
 				CONTOUR_HALF_PANEL.get(), CONTOUR_FLAT_PANE.get(),
 				CONTOUR_CORNER_SLICE.get(), CONTOUR_BYTE_PANEL.get(), CONTOUR_HALF_LAYER.get(), CONTOUR_IRON_DOOR.get(), CONTOUR_IRON_TRAPDOOR.get(),
 				CONTOUR_SLIDING_DOOR.get(), CONTOUR_FOLDING_DOOR.get(),
-				CONTOUR_CATWALK.get(), CONTOUR_SLOPE_LAYER.get())
-				CONTOUR_CATWALK.get(), CONTOUR_BOARD.get())
+				CONTOUR_CATWALK.get(), CONTOUR_SLOPE_LAYER.get(), CONTOUR_BOARD.get())
 			.build(null));
 
 	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ContourSignBlockEntity>> CONTOUR_SIGN_BE =
