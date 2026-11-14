@@ -3,6 +3,7 @@ package net.createcontour.client;
 import java.util.ArrayList;
 import java.util.List;
 import com.simibubi.create.content.decoration.copycat.CopycatModel;
+import net.createcontour.blockentity.ContourBlockEntity;
 import net.createcontour.material.MaterialSafety;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
@@ -235,19 +236,32 @@ public abstract class ContourModel extends CopycatModel {
 				? w : ModelData.EMPTY;
 			if (wrapped.getProperties().isEmpty()) {
 				BlockState material = materialFromData(safe);
-				List<BakedQuad> cached = quadCache.getIfPresent(
+				// Issue #19: blended faces depend on the neighbor cells,
+				// which the position-less QuadKey cannot key on - skip
+				// the cache entirely while a painted Contour neighbor is
+				// present (the same cells edge blending targets).
+				boolean blend = blendingNeighbor(safe);
+				List<BakedQuad> cached = blend ? null : quadCache.getIfPresent(
 					new QuadKey(state, side, material, renderType));
 				if (cached != null)
 					return cached;
 				List<BakedQuad> quads = emitShape(state, side,
 					d -> sourcesFor(material, d, rand, wrapped, renderType));
-				quadCache.put(
-					new QuadKey(state, side, material, renderType), quads);
+				quads = blendBoundaryQuads(quads, side, material,
+					d -> sourcesFor(material, d, rand, wrapped, renderType),
+					rand, safe, renderType);
+				if (!blend)
+					quadCache.put(
+						new QuadKey(state, side, material, renderType), quads);
 				return quads;
 			}
 			BlockState material = materialFromData(safe);
-			return emitShape(state, side,
-				d -> sourcesFor(material, d, rand, wrapped, renderType));
+			return blendBoundaryQuads(
+				emitShape(state, side,
+					d -> sourcesFor(material, d, rand, wrapped, renderType)),
+				side, material,
+				d -> sourcesFor(material, d, rand, wrapped, renderType),
+				rand, safe, renderType);
 		} catch (RuntimeException e) {
 			return neutralQuads(side); // never invisible on a failure
 		}
@@ -261,6 +275,145 @@ public abstract class ContourModel extends CopycatModel {
 
 	public static final net.neoforged.neoforge.client.model.data.ModelProperty<ModelData>
 		WRAPPED_PROPERTY = new net.neoforged.neoforge.client.model.data.ModelProperty<>();
+
+	/**
+	 * Issue #19 edge blending: per-direction (Direction.get3DDataValue)
+	 * painted material of each axial Contour-BE neighbor that presents a
+	 * face on the shared boundary plane, or null where the neighbor is
+	 * non-Contour, unpainted, or has no coplanar face. Occupant extras
+	 * compare their own material against these entries.
+	 */
+	public static final net.neoforged.neoforge.client.model.data.ModelProperty<BlockState[]>
+		NEIGHBOR_MATERIALS = new net.neoforged.neoforge.client.model.data.ModelProperty<>();
+
+	/**
+	 * Issue #19: per-direction material model data gathered AT the
+	 * same-material Contour neighbor's cell - its own CTM context, so a
+	 * blended quad samples the tile region the neighbor's inward face
+	 * actually shows ("the neighbor's region").
+	 */
+	public static final net.neoforged.neoforge.client.model.data.ModelProperty<ModelData[]>
+		NEIGHBOR_WRAPPED = new net.neoforged.neoforge.client.model.data.ModelProperty<>();
+
+	/**
+	 * Issue #19: remap the emitted boundary list for `side` to the
+	 * material's opposite-direction face region when the axial Contour
+	 * neighbor presents a coplanar face painted the SAME material.
+	 * Non-Contour or different-material neighbors fall through with the
+	 * issue-#9 anchoring untouched; interior/inset quads are excluded
+	 * because callers only pass the boundary `side` list. `srcFor` is
+	 * the direction->sources function the quads were emitted with (used
+	 * only for the per-face source count).
+	 */
+	protected final List<BakedQuad> blendBoundaryQuads(List<BakedQuad> quads,
+		@Nullable Direction side, @Nullable BlockState quadMaterial,
+		java.util.function.Function<Direction, List<ShapeQuads.SrcQuad>> srcFor,
+		RandomSource rand, ModelData data, @Nullable RenderType renderType) {
+		try {
+			if (side == null || quadMaterial == null || quads.isEmpty()
+				|| MaterialSafety.isNeutral(quadMaterial))
+				return quads;
+			BlockState[] nm = data == null ? null : data.get(NEIGHBOR_MATERIALS);
+			if (nm == null || side.get3DDataValue() >= nm.length)
+				return quads;
+			BlockState nmat = nm[side.get3DDataValue()];
+			if (nmat == null || !MaterialSafety.normalize(nmat)
+				.equals(MaterialSafety.normalize(quadMaterial)))
+				return quads;
+			ModelData[] nd = data.get(NEIGHBOR_WRAPPED);
+			ModelData ndata = nd != null && side.get3DDataValue() < nd.length
+				? nd[side.get3DDataValue()] : null;
+			List<ShapeQuads.SrcQuad> blendSrcs = sourcesFor(quadMaterial,
+				side.getOpposite(), rand,
+				ndata != null ? ndata : ModelData.EMPTY, renderType);
+			if (blendSrcs.isEmpty())
+				return quads;
+			return ShapeQuads.remapSources(quads,
+				srcFor.apply(side).size(), blendSrcs);
+		} catch (RuntimeException e) {
+			return quads; // blending is cosmetic; never break the mesh
+		}
+	}
+
+	/** Any painted Contour neighbor at all (cache bypass signal). */
+	private static boolean blendingNeighbor(@Nullable ModelData data) {
+		BlockState[] nm = data == null ? null : data.get(NEIGHBOR_MATERIALS);
+		if (nm == null)
+			return false;
+		for (BlockState s : nm)
+			if (s != null)
+				return true;
+		return false;
+	}
+
+	/**
+	 * Coplanarity gate (ADR-017 shared lattice plane): does the Contour
+	 * cell at `np` emit any face on `face`'s boundary plane? Probed via
+	 * the neighbor model's own emission with a neutral source so the
+	 * check follows render geometry, not collision; extra occupants
+	 * (issue #12 channels) count through the BE's model-data lists.
+	 */
+	private static boolean neighborPresentsFace(BlockAndTintGetter level,
+		BlockPos np, Direction face) {
+		try {
+			BlockState ns = level.getBlockState(np);
+			if (!(Minecraft.getInstance().getBlockRenderer().getBlockModel(ns)
+				instanceof ContourModel cm))
+				return false;
+			if (!cm.emitShape(ns, face,
+				dd -> List.of(ShapeQuads.neutral(dd,
+					cm.original.getParticleIcon()))).isEmpty())
+				return true;
+			// Occupant extras reach the shared plane outside the host
+			// shape's footprint (byte octants, panel slots, pane sheets).
+			ModelData nd = level.getModelData(np);
+			if (nd == null)
+				return false;
+			List<ContourByteModel.ByteExtra> bytes =
+				nd.get(ContourByteModel.BYTE_EXTRAS);
+			if (bytes != null)
+				for (ContourByteModel.ByteExtra e : bytes) {
+					net.createcontour.block.ContourByteBlock.Octant o =
+						net.createcontour.block.ContourByteBlock.Octant
+							.values()[e.octant()];
+					if (boxReachesPlane(new float[]{o.x * 8f, o.y * 8f,
+						o.z * 8f, o.x * 8f + 8f, o.y * 8f + 8f,
+						o.z * 8f + 8f}, face))
+						return true;
+				}
+			List<ContourMultipartModel.PanelExtra> panels =
+				nd.get(ContourMultipartModel.PANEL_EXTRAS);
+			if (panels != null)
+				for (ContourMultipartModel.PanelExtra e : panels)
+					for (float[] b : net.createcontour.block.PanelSlots
+						.occupantBoxes(e.slot(), e.kind()))
+						if (boxReachesPlane(b, face))
+							return true;
+			List<ContourMultipartModel.PaneExtra> panes =
+				nd.get(ContourMultipartModel.PANE_EXTRAS);
+			if (panes != null)
+				for (ContourMultipartModel.PaneExtra e : panes)
+					for (float[] b : net.createcontour.block
+						.ContourFlatPaneBlock.boxesForAxis(e.axis()))
+						if (boxReachesPlane(b, face))
+							return true;
+			return false;
+		} catch (RuntimeException e) {
+			return false;
+		}
+	}
+
+	/** Does an 0..16 px AABB touch the boundary plane `face` exits on? */
+	private static boolean boxReachesPlane(float[] b, Direction face) {
+		return switch (face.getAxis()) {
+			case X -> face.getStepX() > 0 ? b[3] >= 16f - 1e-4
+				: b[0] <= 1e-4;
+			case Y -> face.getStepY() > 0 ? b[4] >= 16f - 1e-4
+				: b[1] <= 1e-4;
+			case Z -> face.getStepZ() > 0 ? b[5] >= 16f - 1e-4
+				: b[2] <= 1e-4;
+		};
+	}
 
 	@Override
 	public net.neoforged.neoforge.client.ChunkRenderTypeSet getRenderTypes(
@@ -342,6 +495,54 @@ public abstract class ContourModel extends CopycatModel {
 						b = b.with(WRAPPED_PROPERTY, md);
 				} catch (RuntimeException ignored) {
 				}
+			}
+			// Issue #19 edge blending: probe the six axial neighbors for
+			// painted ContourBE cells that present a coplanar face on the
+			// shared lattice plane. Runs regardless of host paint so
+			// painted occupant extras on an unpainted host still blend;
+			// host quads compare their own material and no-match entries
+			// simply never remap. NEIGHBOR_MATERIALS records each painted
+			// Contour neighbor's material; NEIGHBOR_WRAPPED carries the
+			// NEIGHBOR's own material-model data gathered at its cell
+			// (its CTM context -> our quads sample the actual tile the
+			// neighbor's inward face shows). The same-material gate in
+			// blendBoundaryQuads consumes nd[i] only when it applies.
+			try {
+				BlockState[] nm = null;
+				ModelData[] nd = null;
+				for (Direction dir : Direction.values()) {
+					int i = dir.get3DDataValue();
+					try {
+						BlockPos np = pos.relative(dir);
+						if (!(level.getBlockEntity(np)
+							instanceof ContourBlockEntity cbe))
+							continue;
+						BlockState nmat = MaterialSafety.sanitize(
+							cbe.getMaterial());
+						if (MaterialSafety.isNeutral(nmat)
+							|| !MaterialSafety.isAccepted(nmat)
+							|| !neighborPresentsFace(level, np,
+								dir.getOpposite()))
+							continue;
+						if (nm == null)
+							nm = new BlockState[6];
+						nm[i] = nmat;
+						ModelData w = Minecraft.getInstance()
+							.getBlockRenderer().getBlockModel(nmat)
+							.getModelData(level, np, nmat, ModelData.EMPTY);
+						if (w != null) {
+							if (nd == null)
+								nd = new ModelData[6];
+							nd[i] = w;
+						}
+					} catch (RuntimeException ignored) {
+					}
+				}
+				if (nm != null)
+					b = b.with(NEIGHBOR_MATERIALS, nm);
+				if (nd != null)
+					b = b.with(NEIGHBOR_WRAPPED, nd);
+			} catch (RuntimeException ignored) {
 			}
 			return b;
 		} catch (RuntimeException e) {

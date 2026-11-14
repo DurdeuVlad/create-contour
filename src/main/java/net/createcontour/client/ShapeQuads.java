@@ -35,6 +35,13 @@ import org.joml.Vector3f;
  * that direction's cullface list; inset exposed faces (interior cut
  * planes) go into the null-direction list. Each exposed face is emitted
  * exactly once.
+ *
+ * Issue #19 edge blending: `remapSources` post-passes a boundary
+ * cullface list so its quads sample the material's opposite-direction
+ * face (the same-material Contour neighbor's inward region). It never
+ * touches the null list, and each quad is re-verified to lie ON the
+ * shared lattice plane before its UVs are rewritten (ADR-017
+ * coplanarity, enforced by onBoundaryPlane).
  */
 final class ShapeQuads {
 
@@ -175,6 +182,74 @@ final class ShapeQuads {
 			verts[b + 7] = packedNormal(d);
 		}
 		return new BakedQuad(verts, src.tint(), d, src.sprite(), src.shade());
+	}
+
+	/**
+	 * Issue #19 same-material edge blending: rewrite the UVs of an
+	 * emitted boundary list so every quad samples `blendSrcs` - the
+	 * material's OPPOSITE-direction face region, i.e. the region the
+	 * same-material Contour neighbor presents on the shared lattice
+	 * plane. Callers pass ONLY a `side`-list (quads lying ON the shared
+	 * plane, the coplanarity rule of ADR-017); each quad keeps its own
+	 * declared direction for the absolute face-plane projection, so the
+	 * remapped field is the neighbor's inward-face field continued over
+	 * our surface. Interior/inset quads (the null list) never reach this
+	 * path; different-material and non-Contour neighbors never produce
+	 * blend sources. `srcCount` is the count of ORIGINAL sources per
+	 * face-rect at emission (src-minor ordering); index i maps to the
+	 * blend list with the same index where available, clamped to the
+	 * last entry otherwise (asymmetric +d/-d quad counts). Each quad
+	 * is re-checked against the shared plane: a quad whose vertices do
+	 * not all lie ON its declared direction's boundary plane keeps the
+	 * original UVs (the ADR-017 coplanarity rule, enforced here rather
+	 * than assumed of every emitter).
+	 */
+	static List<BakedQuad> remapSources(List<BakedQuad> quads, int srcCount,
+		List<SrcQuad> blendSrcs) {
+		if (quads.isEmpty() || blendSrcs.isEmpty())
+			return quads;
+		int denom = Math.max(1, srcCount);
+		List<BakedQuad> out = new ArrayList<>(quads.size());
+		for (int i = 0; i < quads.size(); i++) {
+			BakedQuad q = quads.get(i);
+			Direction d = q.getDirection();
+			int[] verts = q.getVertices().clone();
+			if (!onBoundaryPlane(verts, d)) {
+				out.add(q);
+				continue;
+			}
+			SrcQuad src = blendSrcs.get(
+				Math.min(i % denom, blendSrcs.size() - 1));
+			for (int v = 0; v < 4; v++) {
+				int b = v * STRIDE;
+				Vector3f pos = new Vector3f(
+					Float.intBitsToFloat(verts[b]),
+					Float.intBitsToFloat(verts[b + 1]),
+					Float.intBitsToFloat(verts[b + 2]));
+				float[] uv = evalUV(src, projX(d, pos), projY(d, pos));
+				verts[b + 4] = Float.floatToRawIntBits(uv[0]);
+				verts[b + 5] = Float.floatToRawIntBits(uv[1]);
+			}
+			out.add(new BakedQuad(verts, src.tint(), d, src.sprite(),
+				src.shade()));
+		}
+		return out;
+	}
+
+	/**
+	 * Every vertex lies on the boundary plane `d` exits on (0 or 1 in
+	 * block units; exact 0/16 px emissions survive the float roundtrip).
+	 */
+	private static boolean onBoundaryPlane(int[] verts, Direction d) {
+		float plane = d.getAxisDirection()
+			== Direction.AxisDirection.POSITIVE ? 1f : 0f;
+		int axisSlot = d.getAxis().ordinal(); // x=0, y=1, z=2 in the vertex
+		for (int v = 0; v < 4; v++) {
+			float c = Float.intBitsToFloat(verts[v * STRIDE + axisSlot]);
+			if (Math.abs(c - plane) > 1e-5f)
+				return false;
+		}
+		return true;
 	}
 
 	/**

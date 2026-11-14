@@ -533,6 +533,16 @@ How mate pairs become proven:
 - Texture: painted-material quads should anchor to the cell grid so
   the same material flows across a mate seam; the UV audit precedes
   any anchoring claim (ADR-017 texture continuation - audit first).
+  Issue #19 edge blending (render-side only, `pending render
+  verification`): when a boundary-plane quad faces a Contour neighbor
+  painted the same material and the neighbor presents a face on that
+  shared lattice plane, the quad's UVs are remapped to sample the
+  material's opposite-direction face region - the neighbor's inward
+  region, gathered with the material model's own model data at the
+  neighbor cell so connected-texture tiles continue too. Different
+  materials, non-Contour neighbors and interior/inset quads keep the
+  issue-#9 absolute anchoring. Blending is a same-field convention,
+  not border art (no custom frames).
 - Honesty rule: a pair stays `pending render verification` until the
   gallery shot or GameTest evidence is recorded in
   [Testing.md](Testing.md) and `docs/evidence/manifest.md`. Unproven
