@@ -62,6 +62,7 @@
   "block.create_contour.contour_barrel_vault": "Contour Barrel Vault",
   "block.create_contour.contour_cog": "Contour Cog",
   "block.create_contour.contour_wheel": "Contour Wheel",
+  "block.create_contour.contour_cogwheel": "Contour Cogwheel",
   "block.create_contour.contour_scaffold": "Contour Scaffold",
   "block.create_contour.contour_gothic_arch": "Contour Gothic Arch",
   "block.create_contour.contour_louver": "Contour Louver",

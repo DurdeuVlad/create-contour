@@ -12,6 +12,7 @@ import net.createcontour.block.ContourBullnoseBlock;
 import net.createcontour.block.ContourCapitalBlock;
 import net.createcontour.block.ContourChainBlock;
 import net.createcontour.block.ContourCogBlock;
+import net.createcontour.block.ContourCogwheelBlock;
 import net.createcontour.block.ContourConeBlock;
 import net.createcontour.block.ContourCorniceBlock;
 import net.createcontour.block.ContourCrenellationBlock;
@@ -287,6 +288,12 @@ public final class ContourRegistries {
 	public static final DeferredBlock<ContourWheelBlock> CONTOUR_WHEEL =
 		BLOCKS.register("contour_wheel",
 			() -> new ContourWheelBlock(shapeProps()));
+	// issue #23: true kinetic cogwheel - a real Create ICogWheel/IRotate
+	// participant whose BE is a KineticBlockEntity carrying the owned
+	// Contour paint/ledger surface (ContourCogwheelBlockEntity).
+	public static final DeferredBlock<ContourCogwheelBlock> CONTOUR_COGWHEEL =
+		BLOCKS.register("contour_cogwheel",
+			() -> new ContourCogwheelBlock(shapeProps()));
 	public static final DeferredBlock<ContourScaffoldBlock> CONTOUR_SCAFFOLD =
 		BLOCKS.register("contour_scaffold",
 			() -> new ContourScaffoldBlock(shapeProps()));
@@ -616,6 +623,9 @@ public final class ContourRegistries {
 	public static final DeferredItem<ContourBlockItem> CONTOUR_WHEEL_ITEM =
 		ITEMS.register("contour_wheel",
 			() -> new ContourBlockItem(CONTOUR_WHEEL.get()));
+	public static final DeferredItem<ContourBlockItem> CONTOUR_COGWHEEL_ITEM =
+		ITEMS.register("contour_cogwheel",
+			() -> new ContourBlockItem(CONTOUR_COGWHEEL.get()));
 	public static final DeferredItem<ContourBlockItem> CONTOUR_SCAFFOLD_ITEM =
 		ITEMS.register("contour_scaffold",
 			() -> new ContourBlockItem(CONTOUR_SCAFFOLD.get()));
@@ -866,6 +876,12 @@ public final class ContourRegistries {
 			.of(ContourSignBlockEntity::new, CONTOUR_SIGN.get())
 			.build(null));
 
+	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<net.createcontour.blockentity.ContourCogwheelBlockEntity>> CONTOUR_COGWHEEL_BE =
+		BLOCK_ENTITIES.register("contour_cogwheel", () -> BlockEntityType.Builder
+			.of(net.createcontour.blockentity.ContourCogwheelBlockEntity::new,
+				CONTOUR_COGWHEEL.get())
+			.build(null));
+
 	public static final DeferredHolder<CreativeModeTab, CreativeModeTab> CONTOUR_TAB =
 		CREATIVE_TABS.register("contour", () -> CreativeModeTab.builder()
 			.title(net.minecraft.network.chat.Component.translatable(
@@ -933,6 +949,7 @@ public final class ContourRegistries {
 				output.accept(CONTOUR_BARREL_VAULT_ITEM.get());
 				output.accept(CONTOUR_COG_ITEM.get());
 				output.accept(CONTOUR_WHEEL_ITEM.get());
+				output.accept(CONTOUR_COGWHEEL_ITEM.get());
 				output.accept(CONTOUR_SCAFFOLD_ITEM.get());
 				output.accept(CONTOUR_GOTHIC_ARCH_ITEM.get());
 				output.accept(CONTOUR_LOUVER_ITEM.get());

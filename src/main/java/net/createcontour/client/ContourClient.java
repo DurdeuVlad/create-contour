@@ -155,6 +155,7 @@ public final class ContourClient {
 		(o, st, m) -> new ContourBoxModel(o, st, m,
 			net.createcontour.block.ContourCogBlock::boxesFor,
 			ContourRegistries.CONTOUR_COG);
+	private static final ModelFactory COGWHEEL = ContourCogwheelModel::new;
 	private static final ModelFactory WHEEL =
 		(o, st, m) -> new ContourBoxModel(o, st, m,
 			net.createcontour.block.ContourWheelBlock::boxesFor,
@@ -375,6 +376,16 @@ public final class ContourClient {
 		net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) {
 		event.enqueueWork(() -> net.createmod.ponder.foundation.PonderIndex
 			.addPlugin(new net.createcontour.client.ponder.ContourPonderPlugin()));
+		// issue #23: instanced Flywheel visual for the kinetic cogwheel.
+		// skipVanillaRender=true so the BER fallback never double-draws
+		// (it also early-outs on supportsVisualization itself).
+		event.enqueueWork(() -> dev.engine_room.flywheel.lib.visualization
+			.SimpleBlockEntityVisualizer
+			.<net.createcontour.blockentity.ContourCogwheelBlockEntity>builder(
+				ContourRegistries.CONTOUR_COGWHEEL_BE.get())
+			.factory(ContourCogwheelVisual::new)
+			.skipVanillaRender(be -> true)
+			.apply());
 	}
 
 	@SubscribeEvent
@@ -503,6 +514,8 @@ public final class ContourClient {
 			BARREL_VAULT, ContourRegistries.CONTOUR_BARREL_VAULT_ITEM.get());
 		wrapBlock(event, ContourRegistries.CONTOUR_COG.get(), COG,
 			ContourRegistries.CONTOUR_COG_ITEM.get());
+		wrapBlock(event, ContourRegistries.CONTOUR_COGWHEEL.get(), COGWHEEL,
+			ContourRegistries.CONTOUR_COGWHEEL_ITEM.get());
 		wrapBlock(event, ContourRegistries.CONTOUR_WHEEL.get(), WHEEL,
 			ContourRegistries.CONTOUR_WHEEL_ITEM.get());
 		wrapBlock(event, ContourRegistries.CONTOUR_SCAFFOLD.get(), SCAFFOLD,
@@ -647,6 +660,9 @@ public final class ContourClient {
 		net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
 		event.registerBlockEntityRenderer(ContourRegistries.CONTOUR_SIGN_BE.get(),
 			ContourSignRenderer::new);
+		event.registerBlockEntityRenderer(
+			ContourRegistries.CONTOUR_COGWHEEL_BE.get(),
+			ContourCogwheelRenderer::new);
 	}
 
 	@SubscribeEvent

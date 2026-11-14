@@ -2,7 +2,7 @@ package net.createcontour.material;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.createcontour.blockentity.ContourBlockEntity;
+import net.createcontour.blockentity.ContourPaintable;
 import net.createcontour.config.ContourConfig;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -147,7 +147,7 @@ public final class MaterialPolicy {
 	 * materials that cost nothing. Uses the same Reservation API as
 	 * placement - reserve, mutate, commit (no refund on success).
 	 */
-	public static boolean paint(Level level, ContourBlockEntity be,
+	public static boolean paint(Level level, ContourPaintable be,
 		@Nullable Player player, @Nullable BlockState requested) {
 		if (level == null || level.isClientSide || be == null || be.isFrozen())
 			return false;
@@ -193,7 +193,7 @@ public final class MaterialPolicy {
 	 * incoming item's paid unit (or the freshly reserved cost), capped at
 	 * host units. Server-side, after a successful merge only.
 	 */
-	public static void onSlabMerge(ContourBlockEntity be, int incomingPaid) {
+	public static void onSlabMerge(ContourPaintable be, int incomingPaid) {
 		if (be == null || be.isFrozen())
 			return;
 		be.setPaidUnits(Math.min(be.hostUnits(),

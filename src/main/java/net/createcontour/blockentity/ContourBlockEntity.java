@@ -31,7 +31,8 @@ import net.neoforged.neoforge.client.model.data.ModelData;
  * super.read/write calls still run to preserve SmartBlockEntity
  * infrastructure; they only handle base keys we overwrite with ours.
  */
-public class ContourBlockEntity extends CopycatBlockEntity {
+public class ContourBlockEntity extends CopycatBlockEntity
+	implements ContourPaintable {
 
 	public static final int SCHEMA_VERSION = 1;
 

@@ -98,12 +98,36 @@ dependencies {
         }
     }
 
+    // issue #23: Flywheel API for the kinetic visual. Flywheel is bundled
+    // inside Create's jar via JarJar, so transitives-off leaves its
+    // packages off the compile classpath. Unpack the exact bundled jar
+    // (offline-safe, version-identical to runtime) below.
+    compileOnly files({ fileTree(layout.buildDirectory.dir('flywheelApi')
+        .get().asFile).matching { include 'flywheel-*.jar' } })
+
     // Headless logic tests (registry-free boundaries: geometry parity,
     // material acceptance). World-dependent GameTests live in the
     // registered create_contour gametest namespace.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
+
+// issue #23: extract Create's bundled Flywheel jar so the compileOnly
+// fileTree dependency above resolves the exact runtime version.
+def unpackFlywheelApi = tasks.register('unpackFlywheelApi', Copy) {
+    into(layout.buildDirectory.dir('flywheelApi'))
+    from({
+        configurations.compileClasspath
+            .filter { it.name.startsWith('create-1.21.1-') }
+            .files
+            .collect { zipTree(it) }
+    }) {
+        include 'META-INF/jarjar/flywheel-*.jar'
+        eachFile { it.path = it.path.replace('META-INF/jarjar/', '') }
+        includeEmptyDirs = false
+    }
+}
+tasks.named('compileJava') { dependsOn unpackFlywheelApi }
 
 jar {
     // Profile-classified output: the pack jar keeps the default name;
