@@ -1,0 +1,196 @@
+{
+  "variants": {
+    "facing=east,size=1,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=east,size=1,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=east,size=2,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=east,size=2,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=east,size=3,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=east,size=3,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=east,size=4,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=east,size=4,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=east,size=5,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=east,size=5,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=east,size=6,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=east,size=6,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=east,size=7,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=east,size=7,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=east,size=8,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=east,size=8,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=1,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=1,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=2,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=2,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=3,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=3,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=4,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=4,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=5,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=5,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=6,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=6,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=7,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=7,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=8,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=north,size=8,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=1,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=1,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=2,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=2,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=3,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=3,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=4,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=4,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=5,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=5,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=6,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=6,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=7,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=7,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=8,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=south,size=8,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=1,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=1,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=2,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=2,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=3,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=3,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=4,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=4,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=5,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=5,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=6,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=6,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=7,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=7,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=8,waterlogged=false": {
+      "model": "create_contour:block/contour_slope_layer"
+    },
+    "facing=west,size=8,waterlogged=true": {
+      "model": "create_contour:block/contour_slope_layer"
+    }
+  }
+}

@@ -114,6 +114,7 @@
     "create_contour:contour_iron_trapdoor",
     "create_contour:contour_sliding_door",
     "create_contour:contour_folding_door",
-    "create_contour:contour_catwalk"
+    "create_contour:contour_catwalk",
+    "create_contour:contour_slope_layer"
   ]
 }

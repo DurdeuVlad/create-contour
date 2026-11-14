@@ -230,7 +230,8 @@ public class ContourBlockItem extends BlockItem {
 		if ((beforeState.getBlock() instanceof net.createcontour.block.ContourSlabBlock
 			|| beforeState.getBlock() instanceof net.createcontour.block.ContourLayersBlock
 			|| beforeState.getBlock() instanceof net.createcontour.block.ContourHalfLayerBlock
-			|| beforeState.getBlock() instanceof net.createcontour.block.ContourSliceBlock)
+			|| beforeState.getBlock() instanceof net.createcontour.block.ContourSliceBlock
+			|| beforeState.getBlock() instanceof net.createcontour.block.ContourSlopeLayerBlock)
 			&& beforeBe instanceof ContourBlockEntity mbe) {
 			mergeMaterial = mbe.getMaterial();
 			mergeFacing = mbe.getFacing();
