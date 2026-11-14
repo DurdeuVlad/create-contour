@@ -133,3 +133,24 @@ Notes:            <assumptions, flakes, follow-up issue>
   case required (M2 gate) - not a skip.
 - MC Pilot (issue 09) must only send input to the focused target window
   (user32 fallback); never launch or steal focus from unrelated apps.
+
+## v0.4.0 client QA evidence (2026-11-14)
+
+- runClientQA: `[contour-smoke] COMPLETE passed=319575 failed=0 total=319575`;
+  continuation gallery rebuilt with 10 groups (7 legacy + slopelayer,
+  board, cogwheel); 10/10 `continuum-*` captures in `run/screenshots/`;
+  `ponder OPEN ok`. Evidence: `run/logs/latest.log` @21:10-21:24.
+- Edge blending (#19): same-material pairs re-captured under the new
+  bake path; rendered seams inspected continuous. Whole-image
+  before/after pixel diff INCONCLUSIVE (camera drift between runs:
+  identical 92% across all 7 pairs = framing/lighting delta, not seam
+  signal). Mechanism verified at code level + visual inspection;
+  a seam-row diff needs a fixed-camera pair capture - future harness
+  item.
+- Slope layer (#21): SIZE=4 + SIZE=8 stacks render (continuum-slopelayer.png).
+- Board (#24): per-face 1px sheets render (continuum-board.png).
+- Cogwheel (#23): kinetic network participation proven by GameTest
+  `cogwheelKinetic` (speed 1:1, counter-rotation); IN-WORLD RENDER
+  NOT VERIFIED - the gallery capture shows the support block but no
+  mesh (instanced visual + baked fallback both appear to yield nothing
+  in dev runtime). Open item before v0.4.0 ships as final.
