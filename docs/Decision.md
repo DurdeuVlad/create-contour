@@ -490,3 +490,31 @@ until the owner approves them.
 | OD-4 | ~~Sneak gesture disambiguation~~ RESOLVED: gestures disjoint, no modifier (ADR-010) | - |
 | OD-5 | Publication target(s) and timing | Owner only |
 | OD-6 | ~~RC2 pack profile tuple~~ RESOLVED: settled inventory in Compatibility.md; residual - live-server deployed tuple unverified (issue 13 captures effective runtime) | Issue 13 |
+
+## ADR-018: Universal host - one occupant model for all channels
+
+- Status: accepted 2026-11-14 (milestone v0.4.0, issue #22)
+- Context: ADR-016a shipped three parallel channels - ByteOccupant
+  (octant), PanelOccupant (face-quadrant), PaneOccupant (interior
+  axis). Three record types, three NBT extras, three render extras
+  duplicate one idea: a cell hosts disjoint occupants.
+- Decision: unify into one host model. `ContourBlockEntity` holds a
+  single `Occupant` list; every occupant is (kind, slot, material,
+  paid) where kind is BYTE/PANEL/PANE/BOARD and slot is
+  channel-specific (octant 0-7, face-quadrant 0-23, axis X/Y/Z, face
+  0-5). Occupant #0 remains in blockstate (legacy path unchanged).
+- Placement: clicking a Contour cell with a Contour shape item checks
+  GEOMETRIC overlap only - the candidate's occupied voxels vs all
+  occupants' voxels. Disjoint -> merge as an occupant regardless of
+  kind. Occupancy channels become a render/serialization concern, not
+  a placement constraint.
+- Consequences: boards (#24), slope slices, and future occupant kinds
+  become occupants without new channels; per-occupant drops/
+  requirements/writeSafe/paint/wrench run one path instead of three;
+  cross-kind co-residence (byte + panel + board in one cell) becomes
+  legal iff disjoint.
+- Migration: read legacy ByteExtras/PanelExtras/PaneExtras into the
+  unified list on load; write the unified Occupants NBT. Old saves
+  keep working; new saves are forward-only past this version.
+- Rejected: per-kind parallel lists (triple bookkeeping); free-form
+  geometry placement (ADR-016 already rejected non-lattice geometry).
