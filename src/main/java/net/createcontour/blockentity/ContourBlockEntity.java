@@ -332,6 +332,98 @@ public class ContourBlockEntity extends CopycatBlockEntity
 		return true;
 	}
 
+	// --- issue #24: board face-shell channel - one occupant record per
+	// PRESENT face of a ContourBoardBlock (face presence itself lives in
+	// blockstate, so records carry material + paid only; they add no
+	// host units of their own) ---
+
+	public record BoardOccupant(int face, BlockState material, int paid) {
+	}
+
+	private final java.util.List<BoardOccupant> boardOccupants =
+		new java.util.ArrayList<>();
+
+	public java.util.List<BoardOccupant> getBoardOccupants() {
+		return java.util.Collections.unmodifiableList(boardOccupants);
+	}
+
+	public int boardOccupantIndex(int face) {
+		for (int i = 0; i < boardOccupants.size(); i++)
+			if (boardOccupants.get(i).face() == face)
+				return i;
+		return -1;
+	}
+
+	/**
+	 * Registers the material/paid record for one face. Presence is the
+	 * caller's contract (the face flag must be set in blockstate); this
+	 * only guards against duplicates, because read-time validation can
+	 * drop records whose flag vanished.
+	 */
+	public boolean addBoardOccupant(int face, BlockState mat, int paid) {
+		if (frozen || face < 0 || face > 5
+			|| boardOccupantIndex(face) >= 0)
+			return false;
+		boardOccupants.add(new BoardOccupant(face,
+			MaterialSafety.sanitize(mat), Math.max(0, paid)));
+		notifyUpdate();
+		if (level != null)
+			refreshMaterialAppearance();
+		return true;
+	}
+
+	public boolean paintBoardOccupant(int idx, BlockState mat, int paid) {
+		if (frozen || idx < 0 || idx >= boardOccupants.size())
+			return false;
+		BoardOccupant old = boardOccupants.get(idx);
+		boardOccupants.set(idx, new BoardOccupant(old.face(),
+			MaterialSafety.sanitize(mat), Math.max(0, paid)));
+		notifyUpdate();
+		if (level != null)
+			refreshMaterialAppearance();
+		return true;
+	}
+
+	@org.jetbrains.annotations.Nullable
+	public BoardOccupant removeBoardOccupant(int face) {
+		int idx = boardOccupantIndex(face);
+		if (frozen || idx < 0)
+			return null;
+		BoardOccupant o = boardOccupants.remove(idx);
+		notifyUpdate();
+		if (level != null)
+			refreshMaterialAppearance();
+		return o;
+	}
+
+	/**
+	 * Clicked-block look for paint-at-placement on boards: the sheet
+	 * under the click - the clicked face's own record when that face is
+	 * occupied (its outer surface was hit), else the opposite sheet
+	 * whose interior surface the ray met. Falls back to any painted
+	 * sheet, then null (unpainted board).
+	 */
+	@org.jetbrains.annotations.Nullable
+	public BlockState boardLook(Direction clickedFace) {
+		if (!(getBlockState().getBlock()
+			instanceof net.createcontour.block.ContourBoardBlock))
+			return null;
+		Direction f = net.createcontour.block.ContourBoardBlock
+			.facePresent(getBlockState(), clickedFace)
+				? clickedFace : clickedFace.getOpposite();
+		int idx = boardOccupantIndex(f.ordinal());
+		if (idx >= 0) {
+			BlockState m = boardOccupants.get(idx).material();
+			if (m != null && !MaterialSafety.isNeutral(m))
+				return m;
+		}
+		for (BoardOccupant o : boardOccupants)
+			if (o.material() != null
+				&& !MaterialSafety.isNeutral(o.material()))
+				return o.material();
+		return null;
+	}
+
 	/**
 	 * Owned appearance refresh: aux light + light engine +, on the client,
 	 * model-data invalidation AND the levelRenderer remesh trigger. The
@@ -423,6 +515,11 @@ public class ContourBlockEntity extends CopycatBlockEntity
 					&& !o.material().getBlock().asItem().getDefaultInstance()
 						.isEmpty())
 					stacks.add(new ItemStack(o.material().getBlock().asItem(), 1));
+			for (BoardOccupant o : boardOccupants)
+				if (o.material() != null && !MaterialSafety.isNeutral(o.material())
+					&& !o.material().getBlock().asItem().getDefaultInstance()
+						.isEmpty())
+					stacks.add(new ItemStack(o.material().getBlock().asItem(), 1));
 		}
 		int defaultUnits =
 			state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.SLAB_TYPE)
@@ -453,6 +550,24 @@ public class ContourBlockEntity extends CopycatBlockEntity
 			return;
 		if (hasCustomMaterial() && ContourConfig.rotateTextures())
 			material = transform.apply(material);
+		// Board face anchors are directions: they must track the
+		// structure rotation/mirror alongside the blockstate face flags
+		// (rotate()/mirror() on the block remap the flags themselves).
+		if (!boardOccupants.isEmpty()) {
+			java.util.List<BoardOccupant> remapped =
+				new java.util.ArrayList<>();
+			for (BoardOccupant o : boardOccupants) {
+				Direction f = transform.mirrorFacing(transform.rotation
+					.rotate(Direction.values()[o.face()]));
+				BlockState m = o.material() != null
+					&& !MaterialSafety.isNeutral(o.material())
+					&& ContourConfig.rotateTextures()
+						? transform.apply(o.material()) : o.material();
+				remapped.add(new BoardOccupant(f.ordinal(), m, o.paid()));
+			}
+			boardOccupants.clear();
+			boardOccupants.addAll(remapped);
+		}
 		facing = transform.mirrorFacing(transform.rotation.rotate(facing));
 		notifyUpdate();
 	}
@@ -566,6 +681,32 @@ public class ContourBlockEntity extends CopycatBlockEntity
 				}
 			}
 		}
+		boardOccupants.clear();
+		if (tag.contains("BoardExtras")) {
+			java.util.Set<Integer> claimed = new java.util.HashSet<>();
+			for (net.minecraft.nbt.Tag t : tag.getList("BoardExtras",
+				net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+				CompoundTag e = (CompoundTag) t;
+				int f = e.getInt("Face");
+				// A record whose face flag is not set in the blockstate,
+				// or a duplicate face, is dropped rather than trusted.
+				if (f < 0 || f > 5 || claimed.contains(f)
+					|| !(getBlockState().getBlock()
+						instanceof net.createcontour.block.ContourBoardBlock)
+					|| !net.createcontour.block.ContourBoardBlock
+						.facePresent(getBlockState(), Direction.values()[f]))
+					continue;
+				try {
+					boardOccupants.add(new BoardOccupant(f,
+						MaterialSafety.sanitize(NbtUtils.readBlockState(
+							provider.lookupOrThrow(Registries.BLOCK),
+							e.getCompound("Material"))),
+						Math.max(0, e.getInt("Paid"))));
+					claimed.add(f);
+				} catch (RuntimeException ignored) {
+				}
+			}
+		}
 		if (level != null)
 			refreshMaterialAppearance();
 	}
@@ -645,6 +786,17 @@ public class ContourBlockEntity extends CopycatBlockEntity
 			}
 			tag.put("PaneExtras", list);
 		}
+		if (!boardOccupants.isEmpty()) {
+			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+			for (BoardOccupant o : boardOccupants) {
+				CompoundTag e = new CompoundTag();
+				e.putInt("Face", o.face());
+				e.put("Material", NbtUtils.writeBlockState(o.material()));
+				e.putInt("Paid", o.paid());
+				list.add(e);
+			}
+			tag.put("BoardExtras", list);
+		}
 	}
 
 	@Override
@@ -717,6 +869,19 @@ public class ContourBlockEntity extends CopycatBlockEntity
 			}
 			tag.put("PaneExtras", list);
 		}
+		if (!boardOccupants.isEmpty()) {
+			net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+			for (BoardOccupant o : boardOccupants) {
+				CompoundTag e = new CompoundTag();
+				e.putInt("Face", o.face());
+				e.put("Material", NbtUtils.writeBlockState(o.material()));
+				boolean custom = o.material() != null
+					&& !MaterialSafety.isNeutral(o.material());
+				e.putInt("Paid", custom && ContourConfig.consumeMaterial() ? 1 : 0);
+				list.add(e);
+			}
+			tag.put("BoardExtras", list);
+		}
 		tag.remove("Item");
 	}
 
@@ -750,6 +915,15 @@ public class ContourBlockEntity extends CopycatBlockEntity
 				ex.add(new net.createcontour.client.ContourMultipartModel.PaneExtra(
 					o.axis(), o.material()));
 			b.with(net.createcontour.client.ContourMultipartModel.PANE_EXTRAS,
+				ex);
+		}
+		if (!boardOccupants.isEmpty()) {
+			java.util.List<net.createcontour.client.ContourBoardModel.BoardExtra> ex =
+				new java.util.ArrayList<>();
+			for (BoardOccupant o : boardOccupants)
+				ex.add(new net.createcontour.client.ContourBoardModel.BoardExtra(
+					o.face(), o.material()));
+			b.with(net.createcontour.client.ContourBoardModel.BOARD_EXTRAS,
 				ex);
 		}
 		return b.build();

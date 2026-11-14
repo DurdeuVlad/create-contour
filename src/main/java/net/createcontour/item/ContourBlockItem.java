@@ -128,6 +128,17 @@ public class ContourBlockItem extends BlockItem {
 
 		public ContourPlaceContext(UseOnContext context) {
 			super(context);
+			this.lookMaterial = lookMaterialAt(context);
+		}
+
+		/**
+		 * Clicked-block look for paint-at-placement: a Contour target
+		 * contributes its BE paint (appearance), never its own recursive
+		 * host block; boards sample the sheet under the click instead
+		 * (issue #24 - their host material is unused).
+		 */
+		@Nullable
+		private static BlockState lookMaterialAt(UseOnContext context) {
 			BlockState target = context.getLevel()
 				.getBlockState(context.getClickedPos());
 			// A Contour target contributes its BE paint (appearance), not its
@@ -135,12 +146,22 @@ public class ContourBlockItem extends BlockItem {
 			// (copycat shapes AND kinetic hosts like the cogwheel).
 			if (context.getLevel().getBlockEntity(context.getClickedPos())
 					instanceof ContourPaintable be
-				&& !MaterialSafety.isNeutral(be.getMaterial())) {
-				this.lookMaterial = be.getMaterial();
-				return;
+				&& !MaterialSafety.isNeutral(be.getMaterial()))
+				return be.getMaterial();
+			// Issue #24: boards keep paint per face - the look samples
+			// the sheet under the click (the clicked face when
+			// occupied, else the sheet behind it).
+			if (target.getBlock()
+					instanceof net.createcontour.block.ContourBoardBlock
+				&& context.getLevel().getBlockEntity(context.getClickedPos())
+					instanceof ContourBlockEntity cbe) {
+				BlockState look = cbe.boardLook(
+					context.getClickedFace());
+				if (look != null)
+					return look;
 			}
 			BlockState norm = MaterialSafety.normalize(target);
-			this.lookMaterial = MaterialSafety.isAccepted(norm) ? norm : null;
+			return MaterialSafety.isAccepted(norm) ? norm : null;
 		}
 	}
 
@@ -198,6 +219,13 @@ public class ContourBlockItem extends BlockItem {
 		if (context.getLevel().getBlockEntity(pos) instanceof ContourPaintable be
 			&& !MaterialSafety.isNeutral(be.getMaterial()))
 			return be.getMaterial();
+		if (clicked.getBlock()
+				instanceof net.createcontour.block.ContourBoardBlock
+			&& context.getLevel().getBlockEntity(pos) instanceof ContourBlockEntity cbe) {
+			BlockState look = cbe.boardLook(context.getClickedFace());
+			if (look != null)
+				return look;
+		}
 		BlockState norm = MaterialSafety.normalize(clicked);
 		return MaterialSafety.isAccepted(norm) ? norm : null;
 	}
@@ -365,6 +393,40 @@ public class ContourBlockItem extends BlockItem {
 			return InteractionResult.FAIL;
 		}
 
+		// --- issue #24: board face merge - click a free face of an
+		// existing board cell to add that face's sheet: the face flag
+		// joins the blockstate and its material/paid record joins the
+		// BE's board channel. ---
+		if (beforeState.getBlock()
+			instanceof net.createcontour.block.ContourBoardBlock
+			&& getBlock() == beforeState.getBlock()
+			&& beforeBe instanceof ContourBlockEntity tbe) {
+			if (level.isClientSide)
+				return InteractionResult.sidedSuccess(true);
+			if (tbe.isFrozen()) {
+				MaterialPolicy.refund(res);
+				return InteractionResult.FAIL;
+			}
+			Direction face = context.getClickedFace();
+			if (net.createcontour.block.ContourBoardBlock
+				.facePresent(beforeState, face)
+				|| !level.setBlock(placePos, beforeState.setValue(
+					net.createcontour.block.ContourBoardBlock
+						.faceProperty(face), true),
+					Block.UPDATE_ALL)) {
+				MaterialPolicy.refund(res);
+				return InteractionResult.FAIL;
+			}
+			// Same-block setBlock retains the BE: register the face's
+			// material + paid record on the existing instance.
+			tbe.addBoardOccupant(face.ordinal(),
+				incoming != null ? incoming : MaterialSafety.neutral(),
+				paidTransfer ? Math.min(prePaid, 1)
+					: (creative ? 0 : cost));
+			held.shrink(1);
+			return InteractionResult.sidedSuccess(false);
+		}
+
 		InteractionResult result = super.place(context);
 		if (!result.consumesAction()) {
 			MaterialPolicy.refund(res);
@@ -400,6 +462,34 @@ public class ContourBlockItem extends BlockItem {
 			int incomingPaid = paidTransfer ? 1 : res != null ? res.totalCount() : 0;
 			cbe.applyPayload(mergeMaterial, mergePaid + incomingPaid,
 				mergeFacing, mergeTop);
+			return result;
+		}
+		if (placed.getBlock()
+			instanceof net.createcontour.block.ContourBoardBlock) {
+			// Boards paint per face, never per host: seed one occupant
+			// record per present face flag (placement sets exactly one,
+			// or joins an existing cell via the merge branch above),
+			// then scrub the host ledger to neutral so imported vanilla
+			// BE data cannot leave operational credit behind.
+			BlockState mat;
+			int paid;
+			if (paidTransfer) {
+				mat = preMaterial;
+				paid = Math.min(prePaid, 1);
+			} else if (incoming != null
+				&& !MaterialSafety.isNeutral(incoming)) {
+				mat = incoming;
+				paid = res != null ? 1 : 0;
+			} else {
+				mat = MaterialSafety.neutral();
+				paid = 0;
+			}
+			for (Direction d : Direction.values())
+				if (net.createcontour.block.ContourBoardBlock
+					.facePresent(placed, d)
+					&& cbe.boardOccupantIndex(d.ordinal()) < 0)
+					cbe.addBoardOccupant(d.ordinal(), mat, paid);
+			cbe.applyPayload(MaterialSafety.neutral(), 0, facing, top);
 			return result;
 		}
 		if (paidTransfer) {

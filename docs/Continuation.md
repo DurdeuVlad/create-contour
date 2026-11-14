@@ -36,6 +36,16 @@ the acceptance evidence. No pair in this file is verified yet.
     center sheet). Single-occupant member shipped (`contour_flat_pane`,
     the y=7..9 sheet); multi-plane composition is pending the owner
     matrix in ADR-016a / issue 5.
+  - Face-shell channel: 1px sheets hugging the 0..1px interior shell of
+    each cell face (issue #24). SHIPPED as an independent block:
+    `contour_board` carries all six faces in its own blockstate
+    (down/up/north/south/west/east) and one `BoardOccupant` record per
+    present face in `ContourBlockEntity.boardOccupants`
+    (`BoardExtras`). Until issue #22's universal model merges the
+    channels, a board cell cannot host panel/pane occupants and no
+    other channel can host a board face - the shell is geometrically
+    orthogonal to the 7..9px interior planes, but the occupancy is not
+    shared yet.
 - Channels never overlap within a cell; cross-channel co-residence is
   allowed only where the geometries cannot intersect (section 4).
 - Boundary continuation happens between cells, never inside one:
@@ -117,10 +127,10 @@ Members: `contour_slab`, `contour_vertical_slab`, `contour_layers`,
 | flat band of N px | equal-height flat band (same LAYERS count), flat-full | pending render verification |
 | corner_slice stepped wedge | corner_slice on the same corner line, notch recessed corner | pending render verification |
 
-### 3.2 Panels and sheets - 2px plates (4)
+### 3.2 Panels and sheets - 1..2px plates (5)
 
 Members: `contour_panel`, `contour_half_panel`, `contour_byte_panel`,
-`contour_flat_pane`.
+`contour_flat_pane`, `contour_board`.
 
 | Shapes | Faces -> edge profiles |
 | --- | --- |
@@ -131,6 +141,7 @@ Members: `contour_panel`, `contour_half_panel`, `contour_byte_panel`,
 | `contour_half_panel` | mount face: flat-half (8x16); perpendicular faces: 2px rim band |
 | `contour_byte_panel` | mount face: one 8x8 face-quadrant patch; perpendicular faces: 1px rim band |
 | `contour_flat_pane` | side faces: 2px band at mid-height (interior plane exits the cell) |
+| `contour_board` | every present face flag: flat-full (1px sheet on that face's interior shell); perpendicular faces of each sheet: 1px rim band |
 
 | Source | Mate | Status |
 | --- | --- | --- |
@@ -140,6 +151,7 @@ Members: `contour_panel`, `contour_half_panel`, `contour_byte_panel`,
 | EDGE_* strip | matching EDGE_* on the shared edge, trim/quoin legs on the same edge, flat-full | pending render verification |
 | DIAG_* diagonal-45 | diagonal-45 sheets/panels sharing the diagonal (slope face, corner_slice), documented inherent seam | pending render verification |
 | flat_pane mid band | flat_pane edge-to-edge deck run, flat-full wall | pending render verification |
+| board 1px sheet | flat-full seat face (the mount backing); a board sheet on the opposite face of the seat cell (coincident back-to-back pair); board sheets on adjacent faces share the shell edge line | pending render verification |
 
 ### 3.3 Octant cells - byte compositions (2)
 
@@ -485,6 +497,16 @@ is evaluated per face without regard to channel.
   proposed: a 1px face plate at the cell boundary and a 7..9 interior
   sheet physically cannot intersect (ADR-016a matrix proposal - owner
   confirmation pending).
+- Face-shell + face-quadrant/interior-plane co-residence (issue #24):
+  board sheets hug the 0..1px boundary shell and interior geometry
+  never crosses 1..15px, so the channels are physically orthogonal.
+  The channel itself is nonetheless INDEPENDENT in v1: all six board
+  faces live in the board's own blockstate (there is no "host + extra"
+  split like byte/panel/pane), so a board cell cannot host panel or
+  pane occupants and a panel cell cannot host board faces. True
+  cross-channel sharing is the issue #22 universal-model work; the
+  honest limitation is that boards compose only with other board
+  faces in the same cell (one occupant record per face flag).
 
 ## 5. Known non-continuations
 
@@ -516,6 +538,11 @@ is evaluated per face without regard to channel.
   on the hinge side and presents no continuation face while open.
 - Mixed byte + panel cells are unsupported in v1 (ADR-016a) - no
   cross-channel mate exists inside one cell.
+- Board cells (issue #24) never co-host a panel/pane occupant, and a
+  panel cell never carries a board face - the face-shell channel is
+  independent until issue #22's universal model merges channels (the
+  1px shell and the 7..9px interior are disjoint by geometry, but the
+  occupancy model does not share them yet).
 
 ## 6. Verification surface
 

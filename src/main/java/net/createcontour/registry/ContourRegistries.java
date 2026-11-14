@@ -6,6 +6,7 @@ import net.createcontour.block.ContourButtonBlock;
 import net.createcontour.block.ContourArchBlock;
 import net.createcontour.block.ContourBarrelVaultBlock;
 import net.createcontour.block.ContourBracketBlock;
+import net.createcontour.block.ContourBoardBlock;
 import net.createcontour.block.ContourByteBlock;
 import net.createcontour.block.ContourBalusterBlock;
 import net.createcontour.block.ContourBullnoseBlock;
@@ -465,6 +466,9 @@ public final class ContourRegistries {
 	public static final DeferredBlock<ContourSlopeLayerBlock> CONTOUR_SLOPE_LAYER =
 		BLOCKS.register("contour_slope_layer",
 			() -> new ContourSlopeLayerBlock(shapeProps()));
+	public static final DeferredBlock<ContourBoardBlock> CONTOUR_BOARD =
+		BLOCKS.register("contour_board",
+			() -> new ContourBoardBlock(shapeProps()));
 
 	public static final DeferredItem<ContourBlockItem> CONTOUR_SLAB_ITEM =
 		ITEMS.register("contour_slab", () -> new ContourBlockItem(CONTOUR_SLAB.get()));
@@ -797,6 +801,9 @@ public final class ContourRegistries {
 	public static final DeferredItem<ContourBlockItem> CONTOUR_SLOPE_LAYER_ITEM =
 		ITEMS.register("contour_slope_layer",
 			() -> new ContourBlockItem(CONTOUR_SLOPE_LAYER.get()));
+	public static final DeferredItem<ContourBlockItem> CONTOUR_BOARD_ITEM =
+		ITEMS.register("contour_board",
+			() -> new ContourBlockItem(CONTOUR_BOARD.get()));
 
 	/**
 	 * Placer feedstock: the "basic block" the place gun consumes - a
@@ -869,6 +876,7 @@ public final class ContourRegistries {
 				CONTOUR_CORNER_SLICE.get(), CONTOUR_BYTE_PANEL.get(), CONTOUR_HALF_LAYER.get(), CONTOUR_IRON_DOOR.get(), CONTOUR_IRON_TRAPDOOR.get(),
 				CONTOUR_SLIDING_DOOR.get(), CONTOUR_FOLDING_DOOR.get(),
 				CONTOUR_CATWALK.get(), CONTOUR_SLOPE_LAYER.get())
+				CONTOUR_CATWALK.get(), CONTOUR_BOARD.get())
 			.build(null));
 
 	public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ContourSignBlockEntity>> CONTOUR_SIGN_BE =
@@ -1004,6 +1012,7 @@ public final class ContourRegistries {
 				output.accept(CONTOUR_FOLDING_DOOR_ITEM.get());
 				output.accept(CONTOUR_CATWALK_ITEM.get());
 				output.accept(CONTOUR_SLOPE_LAYER_ITEM.get());
+				output.accept(CONTOUR_BOARD_ITEM.get());
 				output.accept(CONTOUR_BLANK_ITEM.get());
 				output.accept(CONTOUR_PLACER.get());
 			})
