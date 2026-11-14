@@ -54,22 +54,32 @@ public class ContourMultipartModel extends ContourBoxModel {
 		@Nullable ModelData data, @Nullable Direction side, RandomSource rand,
 		@Nullable RenderType renderType) {
 		List<BakedQuad> out = new ArrayList<>();
+		// Issue #19: each occupant's boundary faces blend toward
+		// same-material Contour neighbors on the occupant's own paint.
 		List<PanelExtra> panels = data == null ? null : data.get(PANEL_EXTRAS);
 		if (panels != null)
 			for (PanelExtra e : panels)
-				out.addAll(ShapeQuads.emitBoxes(
+				out.addAll(model.blendBoundaryQuads(ShapeQuads.emitBoxes(
 					PanelSlots.occupantBoxes(e.slot(), e.kind()), side,
 					d -> model.sourcesFor(e.material(), d, rand,
-						ModelData.EMPTY, renderType)));
+						ModelData.EMPTY, renderType)),
+					side, e.material(),
+					d -> model.sourcesFor(e.material(), d, rand,
+						ModelData.EMPTY, renderType),
+					rand, data, renderType));
 		List<PaneExtra> panes = data == null ? null : data.get(PANE_EXTRAS);
 		if (panes != null)
 			for (PaneExtra e : panes)
-				out.addAll(ShapeQuads.emitBoxes(
+				out.addAll(model.blendBoundaryQuads(ShapeQuads.emitBoxes(
 					net.createcontour.block.ContourFlatPaneBlock
 						.boxesForAxis(e.axis()),
 					side,
 					d -> model.sourcesFor(e.material(), d, rand,
-						ModelData.EMPTY, renderType)));
+						ModelData.EMPTY, renderType)),
+					side, e.material(),
+					d -> model.sourcesFor(e.material(), d, rand,
+						ModelData.EMPTY, renderType),
+					rand, data, renderType));
 		return out;
 	}
 
