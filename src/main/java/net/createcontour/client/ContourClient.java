@@ -823,7 +823,7 @@ public final class ContourClient {
 						buildContinuationGallery(Minecraft.getInstance());
 						frameGallery(0);
 					}
-					case 10, 11, 12, 13, 14, 15, 16 -> {
+					case 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 -> {
 						int shot = visualStage - GALLERY_SHOT_STAGE;
 						if (shot < GALLERY_NAMES.length) {
 							grab("continuum-" + GALLERY_NAMES[shot]);
@@ -835,7 +835,7 @@ public final class ContourClient {
 									GALLERY_NAMES.length);
 						}
 					}
-					case 17 -> {
+					case 20 -> {
 						var mc = Minecraft.getInstance();
 						var gun = new net.minecraft.world.item.ItemStack(
 							ContourRegistries.CONTOUR_PLACER.get());
@@ -846,7 +846,7 @@ public final class ContourClient {
 						mc.player.setItemInHand(
 							net.minecraft.world.InteractionHand.MAIN_HAND, gun);
 					}
-					case 18 -> grab("placer-firstperson");
+					case 21 -> grab("placer-firstperson");
 					default -> {
 					}
 				}
@@ -947,7 +947,8 @@ public final class ContourClient {
 	private static final BlockPos GALLERY_BASE = new BlockPos(140, -60, 112);
 	private static final String[] GALLERY_NAMES = {
 		"slope-slab", "byte-pair", "panel-stone", "stairs-slab",
-		"round-slope", "panel-bytes", "vslab-byte"};
+		"round-slope", "panel-bytes", "vslab-byte",
+		"slopelayer", "board", "cogwheel"};
 	private static final int GALLERY_SHOT_STAGE = 10;
 	private static final int GALLERY_LAST_STAGE =
 		GALLERY_SHOT_STAGE + GALLERY_NAMES.length - 1;
@@ -1356,6 +1357,49 @@ public final class ContourClient {
 				casing, 1);
 		}
 		paintAt(level, g, casing, Direction.SOUTH, false);
+
+		// v0.4.0 additions: slope-layer stacks (SIZE 4 beside a full
+		// SIZE-8 ramp), a multi-face painted board, and the kinetic
+		// cogwheel placed on a shaft-facing axis (rendered mesh is the
+		// visual; network motion is verified by GameTest).
+		g = GALLERY_BASE.offset(28, 0, 0);
+		put(level, g, ContourRegistries.CONTOUR_SLOPE_LAYER.get()
+			.defaultBlockState()
+			.setValue(net.createcontour.block.ContourSlopeLayerBlock.FACING,
+				Direction.SOUTH)
+			.setValue(net.createcontour.block.ContourSlopeLayerBlock.SIZE, 4));
+		put(level, g.east(), ContourRegistries.CONTOUR_SLOPE_LAYER.get()
+			.defaultBlockState()
+			.setValue(net.createcontour.block.ContourSlopeLayerBlock.FACING,
+				Direction.SOUTH)
+			.setValue(net.createcontour.block.ContourSlopeLayerBlock.SIZE, 8));
+		paintAt(level, g, bricks, Direction.NORTH, false);
+		paintAt(level, g.east(), bricks, Direction.NORTH, false);
+
+		g = GALLERY_BASE.offset(32, 0, 0);
+		put(level, g, ContourRegistries.CONTOUR_BOARD.get()
+			.defaultBlockState()
+			.setValue(net.createcontour.block.ContourBoardBlock.DOWN, true)
+			.setValue(net.createcontour.block.ContourBoardBlock.NORTH, true)
+			.setValue(net.createcontour.block.ContourBoardBlock.EAST, true));
+		var boardBe = cbeAt(level, g);
+		if (boardBe != null) {
+			boardBe.addBoardOccupant(Direction.DOWN.ordinal(), concrete, 1);
+			boardBe.addBoardOccupant(Direction.NORTH.ordinal(), concrete, 1);
+			boardBe.addBoardOccupant(Direction.EAST.ordinal(), concrete, 1);
+		}
+
+		g = GALLERY_BASE.offset(36, 0, 0);
+		put(level, g.west(), stone); // axis-end support: Create cogs
+		// pop without a solid face on their AXIS
+		put(level, g, ContourRegistries.CONTOUR_COGWHEEL.get()
+			.defaultBlockState()
+			.setValue(com.simibubi.create.content.kinetics.simpleRelays.CogWheelBlock.AXIS,
+				net.minecraft.core.Direction.Axis.X));
+		var cogBe = level.getBlockEntity(g);
+		if (cogBe instanceof net.createcontour.blockentity.ContourPaintable cp)
+			cp.applyPayload(planks, 1, Direction.NORTH, false);
+
 		com.mojang.logging.LogUtils.getLogger().info(
 			"[contour-smoke] continuation gallery built at {} groups={}",
 			GALLERY_BASE, GALLERY_NAMES.length);
