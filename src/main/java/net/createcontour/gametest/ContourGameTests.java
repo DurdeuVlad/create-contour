@@ -1,10 +1,16 @@
 package net.createcontour.gametest;
 
 import java.util.List;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
+import com.simibubi.create.content.kinetics.motor.CreativeMotorBlock;
+import com.simibubi.create.content.kinetics.simpleRelays.ICogWheel;
 import net.createcontour.block.ContourSlabBlock;
 import net.createcontour.block.ContourStairsBlock;
 import net.createcontour.block.ContourVerticalSlabBlock;
 import net.createcontour.blockentity.ContourBlockEntity;
+import net.createcontour.blockentity.ContourCogwheelBlockEntity;
+import net.createcontour.blockentity.ContourPaintable;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.createcontour.config.ContourConfig;
 import net.createcontour.item.ContourBlockItem;
@@ -1319,5 +1325,101 @@ public class ContourGameTests {
 		} finally {
 			ContourConfig.CONSUME_MATERIAL.set(wasConsume);
 		}
+	}
+
+	// --- issue #23: kinetic cogwheel ---
+
+	@GameTest(template = "test_empty")
+	public void cogwheelKinetic(GameTestHelper h) {
+		ServerLevel level = h.getLevel();
+		net.createcontour.block.ContourCogwheelBlock cog =
+			ContourRegistries.CONTOUR_COGWHEEL.get();
+		BlockState stateZ = cog.defaultBlockState().setValue(
+			RotatedPillarKineticBlock.AXIS, Direction.Axis.Z);
+
+		// API-level contract: dedicated small cog on the AXIS property.
+		h.assertTrue(ICogWheel.isDedicatedCogWheel(cog)
+			&& ICogWheel.isSmallCog(cog) && !ICogWheel.isLargeCog(cog),
+			"not a dedicated small cogwheel");
+		h.assertTrue(cog.getRotationAxis(stateZ) == Direction.Axis.Z
+			&& cog.hasShaftTowards(level, h.absolutePos(P), stateZ,
+				Direction.NORTH)
+			&& !cog.hasShaftTowards(level, h.absolutePos(P), stateZ,
+				Direction.UP), "axis/shaft contract wrong");
+		h.assertTrue(ContourRegistries.CONTOUR_COGWHEEL_BE.get().isValid(stateZ),
+			"kinetic BE type misses block");
+
+		// paint + ledger + safe-write on the kinetic host.
+		h.setBlock(P, stateZ);
+		var be = (ContourCogwheelBlockEntity) level
+			.getBlockEntity(h.absolutePos(P));
+		h.assertTrue(be instanceof KineticBlockEntity
+			&& be instanceof ContourPaintable, "BE contract split");
+		boolean wasConsume = ContourConfig.consumeMaterial();
+		CompoundTag full;
+		try {
+			ContourConfig.CONSUME_MATERIAL.set(true);
+			Player p = player(h);
+			p.getInventory().add(new ItemStack(Items.DIRT, 1));
+			h.assertTrue(MaterialPolicy.paint(level, be, p,
+				Blocks.DIRT.defaultBlockState()), "paint failed on kinetic host");
+			h.assertTrue(be.getMaterial().getBlock() == Blocks.DIRT
+				&& be.getPaidUnits() == 1, "kinetic host ledger wrong");
+			CompoundTag safe = new CompoundTag();
+			be.writeSafe(safe, level.registryAccess());
+			h.assertTrue(safe.getInt("PaidUnits") == 1
+				&& !safe.contains("Item"), "writeSafe wrong on kinetic host");
+			full = be.saveWithFullMetadata(level.registryAccess());
+			h.assertTrue(full.getInt("ContourVersion")
+				== ContourCogwheelBlockEntity.SCHEMA_VERSION
+				&& full.contains("Speed"),
+				"kinetic+contour nbt not persisted together");
+		} finally {
+			ContourConfig.CONSUME_MATERIAL.set(wasConsume);
+		}
+		// payload survives a fresh load (material + paid credit).
+		ContourCogwheelBlockEntity probe = new ContourCogwheelBlockEntity(
+			h.absolutePos(P), stateZ);
+		probe.loadWithComponents(full, level.registryAccess());
+		h.assertTrue(probe.getMaterial().getBlock() == Blocks.DIRT
+			&& probe.getPaidUnits() == 1, "payload round-trip failed");
+
+		// real network propagation: motor -> shaft -> cog is same-axis
+		// (1:1); a coplanar small cog on the same axis (offset
+		// perpendicular within the gear plane) meshes tooth-to-tooth and
+		// must counter-rotate - Create's small/small Gear<->Gear rule.
+		BlockPos motorPos = P.offset(0, 0, 2);
+		BlockPos shaftPos = P.offset(0, 0, 1);
+		BlockPos gearPos = P.west();
+		h.setBlock(motorPos, BuiltInRegistries.BLOCK.get(
+			ResourceLocation.fromNamespaceAndPath("create", "creative_motor"))
+			.defaultBlockState()
+			.setValue(CreativeMotorBlock.FACING, Direction.NORTH));
+		h.setBlock(shaftPos, BuiltInRegistries.BLOCK.get(
+			ResourceLocation.fromNamespaceAndPath("create", "shaft"))
+			.defaultBlockState()
+			.setValue(RotatedPillarKineticBlock.AXIS, Direction.Axis.Z));
+		h.setBlock(gearPos, cog.defaultBlockState().setValue(
+			RotatedPillarKineticBlock.AXIS, Direction.Axis.Z));
+
+		h.runAtTickTime(40, () -> {
+			KineticBlockEntity shaft = (KineticBlockEntity) level
+				.getBlockEntity(h.absolutePos(shaftPos));
+			ContourCogwheelBlockEntity live = (ContourCogwheelBlockEntity) level
+				.getBlockEntity(h.absolutePos(P));
+			ContourCogwheelBlockEntity gear = (ContourCogwheelBlockEntity) level
+				.getBlockEntity(h.absolutePos(gearPos));
+			h.assertTrue(shaft != null && live != null && gear != null,
+				"kinetic graph missing BEs");
+			h.assertTrue(shaft.getSpeed() != 0f, "shaft unpowered");
+			h.assertTrue(live.getSpeed() == shaft.getSpeed(),
+				"cog speed " + live.getSpeed() + " != shaft "
+					+ shaft.getSpeed());
+			h.assertTrue(live.hasSource(), "cog has no rotation source");
+			h.assertTrue(gear.getSpeed() == -live.getSpeed(),
+				"coplanar small gear should reverse: " + gear.getSpeed()
+					+ " vs " + -live.getSpeed());
+			h.succeed();
+		});
 	}
 }

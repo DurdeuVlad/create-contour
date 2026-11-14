@@ -83,6 +83,16 @@ Acceptance contract when picked up:
 
 ## Family C - Functional disguises (cogwheel / shaft / fluid pipe)
 
+Status note (issue #23): the COGWHEEL member shipped as
+`create_contour:contour_cogwheel` - a real `CogWheelBlock` subclass
+(ICogWheel small cog, AXIS) whose BE is a `BracketedKineticBlockEntity`
+carrying the owned ContourPaintable material/ledger surface (not the
+wrap-vs-delegate fake this section warns against). Paint renders on the
+rotating mesh via a Flywheel RotatingInstance (instanced) or a baked
+SuperByteBuffer fallback; static chunk emission is deliberately empty.
+The SHAFT and FLUID PIPE members below remain deferred on the same
+contract.
+
 Problem: copycat-wrapped Create kinetic and fluid blocks - a cog or
 pipe that takes on neighbor material looks.
 

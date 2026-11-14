@@ -3,6 +3,7 @@ package net.createcontour.item;
 import java.util.List;
 import net.createcontour.block.ContourBlock;
 import net.createcontour.blockentity.ContourBlockEntity;
+import net.createcontour.blockentity.ContourPaintable;
 import net.createcontour.config.ContourConfig;
 import net.createcontour.material.MaterialPolicy;
 import net.createcontour.material.MaterialPolicy.Reservation;
@@ -130,10 +131,10 @@ public class ContourBlockItem extends BlockItem {
 			BlockState target = context.getLevel()
 				.getBlockState(context.getClickedPos());
 			// A Contour target contributes its BE paint (appearance), not its
-			// own recursive host block.
-			if (target.getBlock() instanceof ContourBlock
-				&& context.getLevel().getBlockEntity(context.getClickedPos())
-					instanceof ContourBlockEntity be
+			// own recursive host block - any ContourPaintable host counts
+			// (copycat shapes AND kinetic hosts like the cogwheel).
+			if (context.getLevel().getBlockEntity(context.getClickedPos())
+					instanceof ContourPaintable be
 				&& !MaterialSafety.isNeutral(be.getMaterial())) {
 				this.lookMaterial = be.getMaterial();
 				return;
@@ -194,8 +195,7 @@ public class ContourBlockItem extends BlockItem {
 		// Contour target's BE paint rather than its recursive host block.
 		BlockPos pos = context.getClickedPos();
 		BlockState clicked = context.getLevel().getBlockState(pos);
-		if (clicked.getBlock() instanceof ContourBlock
-			&& context.getLevel().getBlockEntity(pos) instanceof ContourBlockEntity be
+		if (context.getLevel().getBlockEntity(pos) instanceof ContourPaintable be
 			&& !MaterialSafety.isNeutral(be.getMaterial()))
 			return be.getMaterial();
 		BlockState norm = MaterialSafety.normalize(clicked);
@@ -374,7 +374,7 @@ public class ContourBlockItem extends BlockItem {
 			return result;
 
 		BlockEntity be = level.getBlockEntity(placePos);
-		if (!(be instanceof ContourBlockEntity cbe)) {
+		if (!(be instanceof ContourPaintable cbe)) {
 			// Placement succeeded but our BE is missing: roll back world,
 			// frame (full components) and reservation exactly.
 			level.setBlock(placePos, beforeState, Block.UPDATE_ALL);
