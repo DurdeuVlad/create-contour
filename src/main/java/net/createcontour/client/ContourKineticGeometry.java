@@ -8,9 +8,14 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.simibubi.create.content.decoration.copycat.CopycatModel;
+import dev.engine_room.flywheel.api.material.Material;
 import dev.engine_room.flywheel.api.model.Model;
-import dev.engine_room.flywheel.lib.model.baked.BlockModelBuilder;
+import dev.engine_room.flywheel.lib.memory.MemoryBlock;
+import dev.engine_room.flywheel.lib.model.ModelUtil;
+import dev.engine_room.flywheel.lib.model.SimpleModel;
+import dev.engine_room.flywheel.lib.model.SimpleQuadMesh;
 import dev.engine_room.flywheel.lib.model.baked.NeoForgeSinglePosVirtualBlockGetter;
+import dev.engine_room.flywheel.lib.vertex.NoOverlayVertexView;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -109,25 +114,103 @@ public final class ContourKineticGeometry {
 
 	/**
 	 * Flywheel {@link Model} for the instanced visual: the blockstate
-	 * model's painted MESH emission captured by Flywheel's own
-	 * BlockModelBuilder over a single-position virtual getter. The axis
-	 * comes baked into the mesh (the virtual state carries it), so the
-	 * instance needs no rotateToFace - only the kinetic spin.
+	 * model's painted MESH emission captured over a single-position
+	 * virtual getter. The axis comes baked into the mesh (the virtual
+	 * state carries it), so the instance needs no rotateToFace - only the
+	 * kinetic spin.
+	 *
+	 * NOTE: this intentionally does NOT use {@code BlockModelBuilder}.
+	 * QA evidence (v0.4.0, .worktrees/fixqa) showed
+	 * {@code BlockModelBuilder.build()} -> BakedModelBufferer.bufferBlocks
+	 * producing zero meshes for this model even though every input was
+	 * verified correct (MESH model data, material, render types, and the
+	 * same tesselateBlock call emitting 216 vertices when driven
+	 * directly). The exact loss point is inside Flywheel's emitter path
+	 * and was not root-caused; this manual equivalent - same virtual
+	 * getter, same gathered model data, the same ModelBlockRenderer
+	 * tessellation - is verified to emit the painted mesh. The mesh
+	 * conversion mirrors Flywheel's package-private
+	 * MeshHelper.blockVerticesToMesh (MemoryBlock + NoOverlayVertexView +
+	 * SimpleQuadMesh), kept local because that helper is not public API.
 	 */
 	public static synchronized Model meshModel(BlockState state,
 		@Nullable BlockState material) {
 		Key key = new Key(axisOf(state), norm(material));
 		Model model = MODELS.get(key);
 		if (model == null) {
-			var getter = NeoForgeSinglePosVirtualBlockGetter.createFullDark()
-				.pos(BlockPos.ZERO)
-				.blockState(state)
-				.modelData(meshData(material));
-			model = new BlockModelBuilder(getter, List.of(BlockPos.ZERO))
-				.build();
+			model = buildMeshModel(state, material);
 			MODELS.put(key, model);
 		}
 		return model;
+	}
+
+	private static Model buildMeshModel(BlockState state,
+		@Nullable BlockState material) {
+		Minecraft mc = Minecraft.getInstance();
+		BakedModel baked = mc.getBlockRenderer().getBlockModel(state);
+		ModelData data = meshData(material);
+		// FULL_BRIGHT (not full-dark): the instanced RotatingInstance
+		// supplies real world lighting at draw time; a dark-baked UV2
+		// would multiply that to near-black (observed in QA: the cog
+		// silhouette rendered as ~rgb(8,7,4)). Create's own partial
+		// buffering uses the full-bright virtual getter for the same
+		// reason.
+		var getter = NeoForgeSinglePosVirtualBlockGetter.createFullBright()
+			.pos(BlockPos.ZERO)
+			.blockState(state)
+			.modelData(data);
+		ModelData gathered = baked.getModelData(getter, BlockPos.ZERO, state,
+			getter.getModelData(BlockPos.ZERO));
+		RandomSource rand = RandomSource.create(42L);
+		long seed = state.getSeed(BlockPos.ZERO);
+		List<Model.ConfiguredMesh> meshes = new ArrayList<>();
+		for (RenderType rt : baked.getRenderTypes(state, rand, gathered)) {
+			ByteBufferBuilder byteBuf = new ByteBufferBuilder(1 << 20);
+			BufferBuilder bb =
+				new BufferBuilder(byteBuf, rt.mode(), rt.format());
+			mc.getBlockRenderer().getModelRenderer().tesselateBlock(getter,
+				baked, state, BlockPos.ZERO, new PoseStack(), bb, true, rand,
+				seed, OverlayTexture.NO_OVERLAY, gathered, rt);
+			MeshData md = bb.build();
+			if (md != null) {
+				Material mat = ModelUtil.getMaterial(rt, true, true);
+				meshes.add(new Model.ConfiguredMesh(mat,
+					blockVerticesToMesh(md, "contour_cogwheel")));
+				md.close();
+			} else {
+				byteBuf.close();
+			}
+		}
+		return new SimpleModel(meshes);
+	}
+
+	/**
+	 * Local mirror of Flywheel's package-private
+	 * {@code MeshHelper.blockVerticesToMesh}: copy BLOCK-format vertex
+	 * data into a tracked {@link MemoryBlock} viewed as a
+	 * {@link NoOverlayVertexView} (stride 31, overlay dropped), wrapped
+	 * in a {@link SimpleQuadMesh}.
+	 */
+	private static SimpleQuadMesh blockVerticesToMesh(MeshData meshData,
+		String descriptor) {
+		var drawState = meshData.drawState();
+		int vertexCount = drawState.vertexCount();
+		long srcStride = drawState.format().getVertexSize();
+		var view = new NoOverlayVertexView();
+		long dstStride = view.stride();
+		MemoryBlock dst =
+			MemoryBlock.mallocTracked((long) vertexCount * dstStride);
+		long srcPtr =
+			org.lwjgl.system.MemoryUtil.memAddress(meshData.vertexBuffer());
+		long dstPtr = dst.ptr();
+		long copy = Math.min(dstStride, srcStride);
+		for (int i = 0; i < vertexCount; i++)
+			org.lwjgl.system.MemoryUtil.memCopy(srcPtr + srcStride * i,
+				dstPtr + dstStride * i, copy);
+		view.ptr(dstPtr);
+		view.vertexCount(vertexCount);
+		view.nativeMemoryOwner(dst);
+		return new SimpleQuadMesh(view, descriptor);
 	}
 
 	/**

@@ -140,17 +140,53 @@ Notes:            <assumptions, flakes, follow-up issue>
   continuation gallery rebuilt with 10 groups (7 legacy + slopelayer,
   board, cogwheel); 10/10 `continuum-*` captures in `run/screenshots/`;
   `ponder OPEN ok`. Evidence: `run/logs/latest.log` @21:10-21:24.
-- Edge blending (#19): same-material pairs re-captured under the new
-  bake path; rendered seams inspected continuous. Whole-image
-  before/after pixel diff INCONCLUSIVE (camera drift between runs:
-  identical 92% across all 7 pairs = framing/lighting delta, not seam
-  signal). Mechanism verified at code level + visual inspection;
-  a seam-row diff needs a fixed-camera pair capture - future harness
-  item.
+  Re-run 2026-11-15 on the gap-fix build: same
+  `passed=319575 failed=0` under both runClientQA and
+  runClientQAnoBlend; `runGameTestServer`:
+  `173 GAME TESTS COMPLETE`, `All 173 required tests passed`
+  (`run-gametest/logs/latest.log` @03:22).
+- Edge blending (#19): VERIFIED by fixed-camera A/B pixel diff on the
+  SAME build (2026-11-15). New test-only switch
+  `-Dcreate_contour.noEdgeBlend=true` early-returns
+  `ContourModel.blendBoundaryQuads`; run config `clientQAnoBlend`
+  (task `runClientQAnoBlend`) sets it - confirmed present in
+  `build/moddev/clientQAnoBlendRunVmArgs.txt`. Captures:
+  `.cache/qa_after_blend/` (runClientQA) vs `.cache/qa_after_noblend/`
+  (runClientQAnoBlend), same world + deterministic gallery camera.
+  Raw whole-frame diffs are dominated by ambient animation noise
+  (sky/water/light shimmer), but at delta>40 the signal is 100%
+  seam-localized - every strong-diff pixel in every pair sits in the
+  y=155..190 seam band, zero outside:
+
+  | pair | differing px (any) | strong-diff px (>40), all in seam band |
+  |---|---|---|
+  | slope-slab | 89575 (21.85%) | 150 |
+  | byte-pair | 59834 (14.60%) | 159 |
+  | panel-stone | 46337 (11.30%) | 159 |
+  | stairs-slab | 34445 (8.40%) | 149 |
+  | round-slope | 22984 (5.61%) | 158 |
+  | panel-bytes | 19888 (4.85%) | 149 |
+  | vslab-byte | 12156 (2.97%) | 147 |
+
+  Honest caveat: blending changes only ~150 pixels per pair at
+  gallery distance; the effect is real and exactly where the issue-#19
+  remap operates (block-edge UV re-sampling), but subtle at this zoom.
 - Slope layer (#21): SIZE=4 + SIZE=8 stacks render (continuum-slopelayer.png).
 - Board (#24): per-face 1px sheets render (continuum-board.png).
-- Cogwheel (#23): kinetic network participation proven by GameTest
-  `cogwheelKinetic` (speed 1:1, counter-rotation); IN-WORLD RENDER
-  NOT VERIFIED - the gallery capture shows the support block but no
-  mesh (instanced visual + baked fallback both appear to yield nothing
-  in dev runtime). Open item before v0.4.0 ships as final.
+- Cogwheel (#23): RESOLVED 2026-11-15. Root cause was twofold:
+  (a) Flywheel's BlockModelBuilder/BakedModelBufferer path silently
+  produced a SimpleModel with zero meshes for this model (direct
+  getQuads and direct tesselateBlock both emitted geometry;
+  md=verts=216); fixed by tessellating into MeshData directly and
+  converting to a Flywheel SimpleQuadMesh locally (public API only).
+  (b) the mesh was baked against a full-DARK virtual getter, so the
+  painted mesh rendered near-black (~rgb(8,7,4)); switched to
+  createFullBright() so instance relighting supplies real light.
+  Separately, the gallery's plain level.getBlockEntity raced the
+  just-placed BE and silently skipped the paint payload; switched to
+  LevelChunk EntityCreationType.IMMEDIATE lookup.
+  Verified: `[contour-cog] visual created pos=BlockPos{x=176,y=-60,
+  z=112} mat=Block{minecraft:oak_planks} meshes=1` (paint payload
+  applied before visual creation); `continuum-cogwheel.png` shows the
+  lit oak-plank cog; kinetic spin via RotatingInstance + GameTest
+  `cogwheelKinetic` (1:1 speed, counter-rotation).

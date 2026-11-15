@@ -57,14 +57,30 @@ public class ContourCogwheelModel extends ContourBoxModel {
 		return data != null && Boolean.TRUE.equals(data.get(MESH_PROPERTY));
 	}
 
+	/** QA diag counter - logs every getQuads call and its result size. */
+	static final boolean DBG =
+		Boolean.getBoolean("create_contour.cogDbg");
+
 	@Override
 	public List<BakedQuad> getQuads(@Nullable BlockState state,
 		@Nullable Direction side, RandomSource rand, ModelData data,
 		@Nullable RenderType renderType) {
 		if (state != null && !isMeshRequest(data)
-			&& !VirtualRenderHelper.isVirtual(data))
+			&& !VirtualRenderHelper.isVirtual(data)) {
+			if (DBG)
+				com.mojang.logging.LogUtils.getLogger().info(
+					"[cogdbg] getQuads side={} mesh={} virt={} -> EMPTY",
+					side, isMeshRequest(data),
+					data != null && VirtualRenderHelper.isVirtual(data));
 			return List.of();
-		return super.getQuads(state, side, rand, data, renderType);
+		}
+		List<BakedQuad> out =
+			super.getQuads(state, side, rand, data, renderType);
+		if (DBG)
+			com.mojang.logging.LogUtils.getLogger().info(
+				"[cogdbg] getQuads side={} mesh={} stateNull={} -> {}",
+				side, isMeshRequest(data), state == null, out.size());
+		return out;
 	}
 
 	/**

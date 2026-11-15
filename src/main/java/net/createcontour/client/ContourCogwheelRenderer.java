@@ -28,10 +28,22 @@ public class ContourCogwheelRenderer
 		super(context);
 	}
 
+	private static boolean logged;
+
 	@Override
 	protected void renderSafe(ContourCogwheelBlockEntity be, float partialTicks,
 		PoseStack ms, MultiBufferSource buffer, int light, int overlay) {
-		if (VisualizationManager.supportsVisualization(be.getLevel()))
+		boolean vis = be.getLevel() != null
+			&& VisualizationManager.supportsVisualization(be.getLevel());
+		if (!logged) {
+			logged = true;
+			com.mojang.logging.LogUtils.getLogger().info(
+				"[contour-cog] BER renderSafe pos={} supportsVis={} buffers={}",
+				be.getBlockPos(), vis,
+				ContourKineticGeometry
+					.buffers(be.getBlockState(), be.getMaterial()).size());
+		}
+		if (vis)
 			return; // instanced visual owns the render
 		for (ContourKineticGeometry.BufferEntry entry : ContourKineticGeometry
 			.buffers(be.getBlockState(), be.getMaterial())) {
