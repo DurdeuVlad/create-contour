@@ -320,6 +320,11 @@ public abstract class ContourModel extends CopycatModel {
 		java.util.function.Function<Direction, List<ShapeQuads.SrcQuad>> srcFor,
 		RandomSource rand, ModelData data, @Nullable RenderType renderType) {
 		try {
+			// QA harness knob (test-only): -Dcreate_contour.noEdgeBlend=true
+			// disables the issue-#19 seam remap entirely so a fixed-camera
+			// before/after capture isolates exactly the blending pixels.
+			if (Boolean.getBoolean("create_contour.noEdgeBlend"))
+				return quads;
 			if (side == null || quadMaterial == null || quads.isEmpty()
 				|| MaterialSafety.isNeutral(quadMaterial))
 				return quads;

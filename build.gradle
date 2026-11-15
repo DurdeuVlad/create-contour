@@ -59,6 +59,15 @@ neoForge {
             systemProperty 'create_contour.renderSmoke', 'true'
             programArguments.addAll '--quickPlaySingleplayer', 'Contour QA'
         }
+        // QA variant with issue-#19 edge blending disabled (fixed-camera
+        // seam pixel-diff: same world, same camera, blend off).
+        clientQAnoBlend {
+            client()
+            gameDirectory = project.file('run')
+            systemProperty 'create_contour.renderSmoke', 'true'
+            systemProperty 'create_contour.noEdgeBlend', 'true'
+            programArguments.addAll '--quickPlaySingleplayer', 'Contour QA'
+        }
     }
     mods {
         create_contour {

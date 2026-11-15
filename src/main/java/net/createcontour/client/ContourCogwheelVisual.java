@@ -67,13 +67,17 @@ public class ContourCogwheelVisual
 		super(context, blockEntity, partialTick);
 		lastMaterial = blockEntity.getMaterial();
 		lastBlockState = blockEntity.getBlockState();
+		var model = ContourKineticGeometry.meshModel(lastBlockState,
+			lastMaterial);
 		rotatingModel = instancerProvider()
-			.instancer(AllInstanceTypes.ROTATING,
-				ContourKineticGeometry.meshModel(lastBlockState, lastMaterial))
+			.instancer(AllInstanceTypes.ROTATING, model)
 			.createInstance()
 			.setup(blockEntity)
 			.setPosition(getVisualPosition());
 		rotatingModel.setChanged();
+		com.mojang.logging.LogUtils.getLogger().info(
+			"[contour-cog] visual created pos={} mat={} meshes={}",
+			getVisualPosition(), lastMaterial, model.meshes().size());
 	}
 
 	@Override

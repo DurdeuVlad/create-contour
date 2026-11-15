@@ -826,6 +826,13 @@ public final class ContourClient {
 					case 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 -> {
 						int shot = visualStage - GALLERY_SHOT_STAGE;
 						if (shot < GALLERY_NAMES.length) {
+							if ("cogwheel".equals(GALLERY_NAMES[shot])
+								&& Minecraft.getInstance()
+									.getSingleplayerServer() != null)
+								cogDiag(Minecraft.getInstance(),
+									Minecraft.getInstance()
+										.getSingleplayerServer().overworld(),
+									GALLERY_BASE.offset(36, 0, 0), "shot");
 							grab("continuum-" + GALLERY_NAMES[shot]);
 							if (shot + 1 < GALLERY_NAMES.length)
 								frameGallery(shot + 1);
@@ -1396,13 +1403,148 @@ public final class ContourClient {
 			.defaultBlockState()
 			.setValue(com.simibubi.create.content.kinetics.simpleRelays.CogWheelBlock.AXIS,
 				net.minecraft.core.Direction.Axis.X));
-		var cogBe = level.getBlockEntity(g);
+		// IMMEDIATE chunk lookup: plain level.getBlockEntity raced the
+		// just-placed BE on the integrated server (returned null in QA,
+		// so the paint payload silently never applied - the cog stayed
+		// on the copycat default material).
+		var cogBe = level.getChunkAt(g) instanceof
+			net.minecraft.world.level.chunk.LevelChunk lc
+			? lc.getBlockEntity(g,
+				net.minecraft.world.level.chunk.LevelChunk.EntityCreationType
+					.IMMEDIATE)
+			: level.getBlockEntity(g);
 		if (cogBe instanceof net.createcontour.blockentity.ContourPaintable cp)
 			cp.applyPayload(planks, 1, Direction.NORTH, false);
+		cogDiag(mc, level, g, "build");
 
 		com.mojang.logging.LogUtils.getLogger().info(
 			"[contour-smoke] continuation gallery built at {} groups={}",
 			GALLERY_BASE, GALLERY_NAMES.length);
+	}
+
+	/** QA diagnostic for the issue-#23 render gap: logs the cogwheel's
+	 *  server + client BE state, visualization backend, registered
+	 *  visualizer, and the painted-mesh quad counts each path would
+	 *  produce. Runs only under the render-smoke harness. */
+	private static void cogDiag(Minecraft mc,
+		net.minecraft.world.level.Level serverLevel, BlockPos g,
+		String when) {
+		var log = com.mojang.logging.LogUtils.getLogger();
+		try {
+			var sBe = serverLevel.getBlockEntity(g);
+			var cLevel = mc.level;
+			var cBe = cLevel == null ? null : cLevel.getBlockEntity(g);
+			boolean vis = cLevel != null
+				&& dev.engine_room.flywheel.api.visualization
+					.VisualizationManager.supportsVisualization(cLevel);
+			boolean registered = dev.engine_room.flywheel.api.visualization
+				.VisualizerRegistry.getVisualizer(
+					ContourRegistries.CONTOUR_COGWHEEL_BE.get()) != null;
+			int meshCount = -1, bufferCount = -1, emptyBufs = -1;
+			StringBuilder steps = new StringBuilder();
+			try {
+				var st = ContourRegistries.CONTOUR_COGWHEEL.get()
+					.defaultBlockState()
+					.setValue(com.simibubi.create.content.kinetics.simpleRelays.CogWheelBlock.AXIS,
+						net.minecraft.core.Direction.Axis.X);
+				meshCount = ContourKineticGeometry
+					.meshModel(st, Blocks.OAK_PLANKS.defaultBlockState())
+					.meshes().size();
+				var bufs = ContourKineticGeometry.buffers(st,
+					Blocks.OAK_PLANKS.defaultBlockState());
+				bufferCount = bufs.size();
+				emptyBufs = (int) bufs.stream()
+					.filter(b -> b.buffer().isEmpty()).count();
+				// reproduce bufferBlocks step by step
+				var src = ContourKineticGeometry.meshData(
+					Blocks.OAK_PLANKS.defaultBlockState());
+				var getter = dev.engine_room.flywheel.lib.model.baked
+					.NeoForgeSinglePosVirtualBlockGetter.createFullDark()
+					.pos(BlockPos.ZERO).blockState(st).modelData(src);
+				var fromGetter = getter.getModelData(BlockPos.ZERO);
+				steps.append(" getterMesh=").append(
+					fromGetter.get(ContourCogwheelModel.MESH_PROPERTY));
+				var m = mc.getBlockRenderer().getBlockModel(st);
+				steps.append(" model=").append(
+					m.getClass().getSimpleName());
+				var gathered = m.getModelData(getter, BlockPos.ZERO, st,
+					fromGetter);
+				steps.append(" gathMesh=").append(
+					gathered.get(ContourCogwheelModel.MESH_PROPERTY))
+					.append(" gathMat=").append(
+						com.simibubi.create.content.decoration.copycat
+							.CopycatModel.getMaterial(gathered));
+				var rts = m.getRenderTypes(st,
+					net.minecraft.util.RandomSource.create(42L), gathered);
+				steps.append(" rts=").append(rts);
+				for (var rt : rts) {
+					int n = m.getQuads(st, null,
+						net.minecraft.util.RandomSource.create(42L),
+						gathered, rt).size();
+					int s = 0;
+					for (Direction d : Direction.values())
+						s += m.getQuads(st, d,
+							net.minecraft.util.RandomSource.create(42L),
+							gathered, rt).size();
+					steps.append(" [").append(rt).append(" n=")
+						.append(n).append(" s=").append(s).append("]");
+					// direct tesselateBlock into a raw BufferBuilder
+					var bbb = new com.mojang.blaze3d.vertex.ByteBufferBuilder(
+						1 << 20);
+					var bb = new com.mojang.blaze3d.vertex.BufferBuilder(bbb,
+						rt.mode(), rt.format());
+					mc.getBlockRenderer().getModelRenderer().tesselateBlock(
+						getter, m, st, BlockPos.ZERO,
+						new com.mojang.blaze3d.vertex.PoseStack(), bb, true,
+						net.minecraft.util.RandomSource.create(42L), 42L,
+						net.minecraft.client.renderer.texture.OverlayTexture
+							.NO_OVERLAY,
+						gathered, rt);
+					var md = bb.build();
+					steps.append(" md=").append(
+						md == null ? "null" : "verts=" + md.drawState()
+							.vertexCount());
+					bbb.close();
+				}
+				// call the exact flywheel entry point directly (pkg-private
+				// class -> reflect)
+				var bufCls = Class.forName(
+					"dev.engine_room.flywheel.lib.model.baked.BakedModelBufferer");
+				var mth = bufCls.getDeclaredMethod("bufferBlocks",
+					java.util.Iterator.class,
+					net.minecraft.world.level.BlockAndTintGetter.class,
+					com.mojang.blaze3d.vertex.PoseStack.class, boolean.class,
+					dev.engine_room.flywheel.lib.model.baked
+						.BlockMaterialFunction.class);
+				mth.setAccessible(true);
+				var sm = (dev.engine_room.flywheel.lib.model.SimpleModel) mth
+					.invoke(null,
+						java.util.List.of(BlockPos.ZERO).iterator(), getter,
+						new com.mojang.blaze3d.vertex.PoseStack(), false,
+						(dev.engine_room.flywheel.lib.model.baked
+							.BlockMaterialFunction) (rt2, sh, ao) -> dev
+								.engine_room.flywheel.lib.model.ModelUtil
+								.getMaterial(rt2, sh, ao));
+				steps.append(" smMeshes=").append(sm.meshes().size());
+				steps.append(" matNull=").append(
+					dev.engine_room.flywheel.lib.model.ModelUtil
+						.getMaterial(
+							net.minecraft.client.renderer.RenderType.solid(),
+							true, true) == null);
+			} catch (Throwable t) {
+				log.info("[contour-smoke] cogDiag {} mesh/buffers threw",
+					when, t);
+			}
+			log.info(
+				"[contour-smoke] cogDiag {} sBe={} cBe={} vis={} vizReg={} mesh={} bufs={} emptyBufs={}{}",
+				when,
+				sBe == null ? "null" : sBe.getClass().getSimpleName(),
+				cBe == null ? "null" : cBe.getClass().getSimpleName(),
+				vis, registered, meshCount, bufferCount, emptyBufs,
+				steps);
+		} catch (Throwable t) {
+			log.info("[contour-smoke] cogDiag {} threw", when, t);
+		}
 	}
 
 		private static int passed, failed;
