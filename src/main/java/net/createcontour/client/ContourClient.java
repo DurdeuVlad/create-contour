@@ -636,6 +636,32 @@ public final class ContourClient {
 			ContourRegistries.CONTOUR_PYRAMID_ITEM.get());
 		wrapBlock(event, ContourRegistries.CONTOUR_LAMP.get(), LAMP,
 			ContourRegistries.CONTOUR_LAMP_ITEM.get());
+		// issue #32: the placer's inventory model must report
+		// isCustomRenderer() so ItemRenderer dispatches to the BEWLR
+		// that draws the gun's back-screen shape icon.
+		ModelResourceLocation placerInv = ModelResourceLocation.inventory(
+			ResourceLocation.fromNamespaceAndPath("create_contour",
+				"contour_placer"));
+		event.getModels().computeIfPresent(placerInv,
+			(k, m) -> new ContourPlacerItemRenderer.ScreenModel(m));
+	}
+
+	/** issue #32: BEWLR for the placer gun's screen icon. */
+	@SubscribeEvent
+	public static void onRegisterClientExtensions(
+		net.neoforged.neoforge.client.extensions.common
+			.RegisterClientExtensionsEvent event) {
+		event.registerItem(new net.neoforged.neoforge.client.extensions
+			.common.IClientItemExtensions() {
+			private final ContourPlacerItemRenderer renderer =
+				new ContourPlacerItemRenderer();
+
+			@Override
+			public net.minecraft.client.renderer
+				.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+				return renderer;
+			}
+		}, ContourRegistries.CONTOUR_PLACER.get());
 	}
 
 	private static void wrapBlock(ModelEvent.ModifyBakingResult event,
@@ -852,8 +878,48 @@ public final class ContourClient {
 									.get()));
 						mc.player.setItemInHand(
 							net.minecraft.world.InteractionHand.MAIN_HAND, gun);
+						// issue #32: prove the baked model dispatches to
+						// the BEWLR that draws the screen icon.
+						com.mojang.logging.LogUtils.getLogger().info(
+							"[contour-smoke] placer customRenderer={}",
+							mc.getItemRenderer().getModel(gun, mc.level,
+								mc.player, 0).isCustomRenderer());
 					}
 					case 21 -> grab("placer-firstperson");
+					case 22 -> {
+						// issue #32: a staged target the aim ray must hit
+						// so the arrow + ghost preview renders in the shot.
+						var mc = Minecraft.getInstance();
+						buildPreviewTarget(mc);
+						var gun = new net.minecraft.world.item.ItemStack(
+							ContourRegistries.CONTOUR_PLACER.get());
+						net.createcontour.item.ContourPlacerItem.setShape(gun,
+							net.minecraft.core.registries.BuiltInRegistries.ITEM
+								.getKey(ContourRegistries.CONTOUR_SLOPE_ITEM
+									.get()));
+						mc.player.setItemInHand(
+							net.minecraft.world.InteractionHand.MAIN_HAND, gun);
+						aimAtBlock(80.5, -60, 142.5, 80.5, -59.5, 141.0);
+					}
+					case 23 -> grab("preview-gun-slope");
+					case 24 -> {
+						var mc = Minecraft.getInstance();
+						mc.player.setItemInHand(
+							net.minecraft.world.InteractionHand.MAIN_HAND,
+							new net.minecraft.world.item.ItemStack(
+								ContourRegistries.CONTOUR_STAIRS_ITEM.get()));
+						aimAtBlock(80.5, -60, 142.5, 80.5, -59.0, 140.8);
+					}
+					case 25 -> grab("preview-shape-stairs");
+					case 26 -> {
+						var mc = Minecraft.getInstance();
+						mc.player.setItemInHand(
+							net.minecraft.world.InteractionHand.MAIN_HAND,
+							new net.minecraft.world.item.ItemStack(
+								ContourRegistries.CONTOUR_BOARD_ITEM.get()));
+						aimAtBlock(80.5, -60, 142.5, 80.4, -59.55, 141.0);
+					}
+					case 27 -> grab("preview-board-face");
 					default -> {
 					}
 				}
@@ -959,9 +1025,14 @@ public final class ContourClient {
 	private static final int GALLERY_SHOT_STAGE = 10;
 	private static final int GALLERY_LAST_STAGE =
 		GALLERY_SHOT_STAGE + GALLERY_NAMES.length - 1;
-	// stages 17-18: equip the placer with a selected shape, then a
-	// first-person capture of the angled screen + live icon decal
-	private static final int SMOKE_LAST_STAGE = GALLERY_LAST_STAGE + 2;
+	// stages 20-21: equip the placer with a selected shape, then a
+	// first-person capture of the angled screen icon. Stages 22-27
+	// (issue #32 placement preview): staged stone target at
+	// (80,-60,140) on a small floor west of the catalog platform;
+	// each setup stage aims the eye ray at a chosen face while holding
+	// the gun or a shape item, and the following stage grabs the
+	// in-world arrow decal + ghost shadow.
+	private static final int SMOKE_LAST_STAGE = GALLERY_LAST_STAGE + 8;
 
 	/** Frames mate-pair group i: SSE of the pair, looking north-west.
 	 *  The feet y is just above the gallery floor so the shot works
@@ -1003,6 +1074,33 @@ public final class ContourClient {
 		float pitch) {
 		Minecraft.getInstance().player.moveTo(x, y, z, yaw, pitch);
 		Minecraft.getInstance().player.setYHeadRot(yaw);
+	}
+
+	/** Stage for the issue-#32 preview captures: a small stone floor
+	 *  west of the catalog platform plus one target block the aim
+	 *  stages point at. */
+	private static void buildPreviewTarget(Minecraft mc) {
+		var server = mc.getSingleplayerServer();
+		if (server == null)
+			return;
+		var level = server.overworld();
+		for (int x = 77; x <= 83; x++)
+			for (int z = 137; z <= 143; z++)
+				level.setBlock(new BlockPos(x, -61, z),
+					Blocks.STONE.defaultBlockState(), 3);
+		level.setBlock(new BlockPos(80, -60, 140),
+			Blocks.STONE.defaultBlockState(), 3);
+	}
+
+	/** Feet position + look-at target: derives yaw/pitch from the eye
+	 *  (feet + 1.62) so mc.hitResult lands on the aimed face. */
+	private static void aimAtBlock(double fx, double fy, double fz,
+		double tx, double ty, double tz) {
+		double dx = tx - fx, dy = ty - (fy + 1.62), dz = tz - fz;
+		double hlen = Math.sqrt(dx * dx + dz * dz);
+		float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+		float pitch = (float) -Math.toDegrees(Math.atan2(dy, hlen));
+		moveCam(fx, fy, fz, yaw, pitch);
 	}
 
 	/** One wide + one close shot of the built scene. */

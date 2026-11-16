@@ -190,3 +190,36 @@ Notes:            <assumptions, flakes, follow-up issue>
   applied before visual creation); `continuum-cogwheel.png` shows the
   lit oak-plank cog; kinetic spin via RotatingInstance + GameTest
   `cogwheelKinetic` (1:1 speed, counter-rotation).
+
+## v0.4.2 placement preview evidence (issue #32, 2026-11-16)
+
+- `./gradlew --offline compileJava`: BUILD SUCCESSFUL (4 existing
+  EventBusSubscriber deprecation warnings only).
+- `./gradlew --offline runClientQA`: `[contour-smoke] COMPLETE
+  passed=319575 failed=0 total=319575`; smoke stages 20-27 hold the
+  placer gun / shape item and aim at a staged stone target so the
+  preview renders. Evidence: `run/logs/latest.log` @15:30,
+  `run/screenshots/`:
+  - `placer-firstperson.png` - gun held in first person; the selected
+    shape icon renders on the gun's angled back screen via the
+    NeoForge BEWLR (`[contour-smoke] placer customRenderer=true`
+    proves `isCustomRenderer()` dispatch; the crosshair HUD layer is
+    deleted, so nothing draws beside the cursor).
+  - `preview-gun-slope.png` - pale-blue chevron decal on the clicked
+    face + translucent ghost fill + white outline of the resolved
+    slope state.
+  - `preview-shape-stairs.png` - same for the stairs shape item.
+  - `preview-board-face.png` - board item: decal aims along the
+    inward clicked-face normal (boards have six face flags, no
+    facing property).
+- `./gradlew --offline runGameTestServer --console=plain -q`:
+  `173 GAME TESTS COMPLETE`, `All 173 required tests passed`.
+  Evidence: `run-gametest/logs/latest.log` @15:35.
+- Known limits: the preview resolves the state through the same
+  placement contexts the gestures use (`ContourPlaceContext` for
+  shape items, the gun's own face-center `BlockPlaceContext`) but is
+  client-side only; server-side item-economy edge cases are not
+  previewed. Ghost fill uses a no-depth-write translucent render
+  type and the decal uses `rendertype_text` at full-bright UV2 so
+  both stay readable; the screen icon is small by design (~3px on
+  the model's screen).
